@@ -1,0 +1,61 @@
+graph TB
+    %% User Actors
+    SA[System Admin]
+    SS[School Staff]
+    PG[Parents/Guardians]
+    
+    %% Applications
+    WEB[React Web Portal<br/>Admin Dashboard]
+    MOB1[School A Branded<br/>Flutter App]
+    MOB2[School B Branded<br/>Flutter App]
+    MOB3[School N Branded<br/>Flutter App]
+    
+    %% Backend Services
+    API[Django REST API<br/>Backend]
+    DB[(PostgreSQL<br/>Multi-tenant DB)]
+    
+    %% External Services
+    FCM[Firebase Cloud<br/>Messaging]
+    FS[Firebase Storage<br/>Files & Images]
+    SMS[SMS/Email<br/>Fallback Service]
+    
+    %% Hosting
+    RW[Railway Platform<br/>Hosting]
+    
+    %% User Interactions
+    SA --> WEB
+    SS --> WEB
+    PG --> MOB1
+    PG --> MOB2
+    PG --> MOB3
+    
+    %% App to Backend Communication
+    WEB --> API
+    MOB1 --> API
+    MOB2 --> API
+    MOB3 --> API
+    
+    %% Backend Services
+    API --> DB
+    API --> FCM
+    API --> FS
+    API --> SMS
+    
+    %% Hosting Relationships
+    RW --> API
+    RW --> WEB
+    
+    %% Notification Flow
+    FCM --> MOB1
+    FCM --> MOB2
+    FCM --> MOB3
+    SMS --> PG
+    
+    %% Data Flow Annotations
+    WEB -.->|CRUD Operations<br/>Student Management| API
+    MOB1 -.->|School A Data<br/>Branded Experience| API
+    MOB2 -.->|School B Data<br/>Branded Experience| API
+    MOB3 -.->|School N Data<br/>Branded Experience| API
+    API -.->|Trigger Notifications<br/>on Data Updates| FCM
+    API -.->|Store/Retrieve<br/>Transcripts & Files| FS
+    API -.->|Multi-tenant<br/>School Data| DB
