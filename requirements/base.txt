@@ -10,3 +10,4 @@ redis==5.0.1
 firebase-admin==6.2.0
 requests==2.31.0
 django-extensions==3.2.3
+dj-database-url==2.1.0
