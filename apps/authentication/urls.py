@@ -15,8 +15,8 @@ urlpatterns = [
     path('verify/', TokenVerifyView.as_view(), name='token_verify'),
     
     # Custom authentication endpoints
-    path('register/', views.RegisterView.as_view(), name='register'),
-    path('profile/', views.ProfileView.as_view(), name='profile'),
-    path('change-password/', views.ChangePasswordView.as_view(), name='change_password'),
-    path('logout/', views.LogoutView.as_view(), name='logout'),
+    path('register/', views.RegisterView, name='register'),
+    path('profile/', views.ProfileView, name='profile'),
+    path('change-password/', views.ChangePasswordView, name='change_password'),
+    path('logout/', views.LogoutView, name='logout'),
 ] 
