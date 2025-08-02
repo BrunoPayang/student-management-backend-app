@@ -240,15 +240,15 @@ class LoginSerializer(serializers.Serializer):
             user = authenticate(username=username, password=password)
             
             if not user:
-                raise serializers.ValidationError('Invalid credentials')
+                raise serializers.ValidationError('Informations d\'identification invalides')
             
             if not user.is_active:
-                raise serializers.ValidationError('User account is disabled')
+                raise serializers.ValidationError('Le compte d\'utilisateur est désactivé')
             
             attrs['user'] = user
             return attrs
         
-        raise serializers.ValidationError('Must include username and password')
+        raise serializers.ValidationError('Doit inclure le nom d\'utilisateur et le mot de passe')
 
 
 class PasswordChangeSerializer(serializers.Serializer):

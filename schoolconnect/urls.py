@@ -4,6 +4,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -22,6 +23,11 @@ urlpatterns = [
         'timestamp': '2025-08-02T01:05:21Z'
     })), name='health-check'),
     
+    # Swagger/OpenAPI documentation
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+    
     # API root endpoint
     path('', csrf_exempt(lambda request: JsonResponse({
         'message': 'SchoolConnect API',
@@ -36,6 +42,9 @@ urlpatterns = [
             'common': '/api/common/',
             'admin': '/admin/',
             'health': '/health/',
+            'swagger': '/api/docs/',
+            'redoc': '/api/redoc/',
+            'schema': '/api/schema/',
         }
     })), name='api-root'),
 ]

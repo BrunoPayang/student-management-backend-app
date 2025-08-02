@@ -1,22 +1,28 @@
 from django.urls import path
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
-    TokenVerifyView,
-)
+from rest_framework_simplejwt.views import TokenRefreshView
 from . import views
 
 app_name = 'authentication'
 
 urlpatterns = [
     # JWT Authentication endpoints
-    path('login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('login/', views.CustomTokenObtainPairView.as_view(), name='login'),
     path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('verify/', TokenVerifyView.as_view(), name='token_verify'),
+    path('logout/', views.LogoutView.as_view(), name='logout'),
     
-    # Custom authentication endpoints
-    path('register/', views.RegisterView, name='register'),
-    path('profile/', views.ProfileView, name='profile'),
-    path('change-password/', views.ChangePasswordView, name='change_password'),
-    path('logout/', views.LogoutView, name='logout'),
+    # User management endpoints
+    path('register/', views.RegisterView.as_view(), name='register'),
+    path('profile/', views.UserProfileView.as_view(), name='profile'),
+    path('change-password/', views.ChangePasswordView.as_view(), name='change_password'),
+    
+    # Password reset endpoints
+    path('password-reset/', views.PasswordResetRequestView.as_view(), name='password_reset'),
+    path('password-reset-confirm/', views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
+    
+    # Utility endpoints
+    path('current-user/', views.current_user, name='current_user'),
+    path('user-context/', views.user_context, name='user_context'),
+    
+    # FCM token management
+    path('fcm-token/', views.UpdateFCMTokenView.as_view(), name='update_fcm_token'),
 ] 

@@ -26,6 +26,8 @@ THIRD_PARTY_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
+    'django_extensions',
+    'drf_spectacular',
 ]
 
 LOCAL_APPS = [
@@ -50,6 +52,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'apps.common.middleware.SchoolTenantMiddleware',
+    'apps.common.middleware.APILoggingMiddleware',
 ]
 
 ROOT_URLCONF = "schoolconnect.urls"
@@ -138,6 +142,45 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+    ],
+    'DEFAULT_PARSER_CLASSES': [
+        'rest_framework.parsers.JSONParser',
+        'rest_framework.parsers.MultiPartParser',
+        'rest_framework.parsers.FileUploadParser',
+    ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+# Spectacular settings for Swagger documentation
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'SchoolConnect API',
+    'DESCRIPTION': 'API pour la gestion des écoles au Niger',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SCHEMA_PATH_PREFIX': '/api/',
+    'TAGS': [
+        {'name': 'authentication', 'description': 'Endpoints d\'authentification'},
+        {'name': 'schools', 'description': 'Gestion des écoles'},
+        {'name': 'students', 'description': 'Gestion des étudiants'},
+        {'name': 'parents', 'description': 'Gestion des parents'},
+        {'name': 'notifications', 'description': 'Gestion des notifications'},
+        {'name': 'files', 'description': 'Gestion des fichiers'},
+        {'name': 'common', 'description': 'Utilitaires communs'},
+    ],
+    'CONTACT': {
+        'name': 'SchoolConnect Support',
+        'email': 'support@schoolconnect.ne',
+    },
+    'LICENSE': {
+        'name': 'MIT License',
+    },
+    'EXTERNAL_DOCS': {
+        'description': 'Documentation complète',
+        'url': 'https://docs.schoolconnect.ne',
+    },
 }
 
 # CORS settings
@@ -151,7 +194,7 @@ CORS_ALLOW_CREDENTIALS = True
 # JWT settings
 from datetime import timedelta
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=24),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
@@ -159,43 +202,6 @@ SIMPLE_JWT = {
 
 # Custom user model
 AUTH_USER_MODEL = 'authentication.User'
-
-# Django REST Framework
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-    ],
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 20,
-    'DEFAULT_RENDERER_CLASSES': [
-        'rest_framework.renderers.JSONRenderer',
-    ],
-    'DEFAULT_PARSER_CLASSES': [
-        'rest_framework.parsers.JSONParser',
-        'rest_framework.parsers.MultiPartParser',
-        'rest_framework.parsers.FileUploadParser',
-    ]
-}
-
-# JWT Settings
-from datetime import timedelta
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=24),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': True,
-}
-
-# CORS Settings
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # React development server
-    "http://127.0.0.1:3000",
-]
-
-CORS_ALLOW_CREDENTIALS = True
 
 # Celery Configuration
 CELERY_BROKER_URL = config('REDIS_URL', default='redis://localhost:6379/0')
