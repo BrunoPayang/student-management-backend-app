@@ -16,7 +16,11 @@ urlpatterns = [
     path('api/common/', include('apps.common.urls')),
     
     # Health check endpoint for Railway
-    path('health/', include('apps.common.urls')),
+    path('health/', csrf_exempt(lambda request: JsonResponse({
+        'status': 'healthy',
+        'message': 'SchoolConnect API is running',
+        'timestamp': '2025-08-02T01:05:21Z'
+    })), name='health-check'),
     
     # API root endpoint
     path('', csrf_exempt(lambda request: JsonResponse({
