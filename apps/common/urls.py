@@ -1,36 +1,42 @@
 from django.urls import path
-from . import views
+from rest_framework.routers import DefaultRouter
+from rest_framework.documentation import include_docs_urls
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework.reverse import reverse
 
-app_name = 'common'
+@api_view(['GET'])
+def api_root(request, format=None):
+    """
+    API Root - Lists all available endpoints
+    """
+    return Response({
+        'authentication': {
+            'login': reverse('authentication:login', request=request, format=format),
+            'register': reverse('authentication:register', request=request, format=format),
+            'refresh': reverse('authentication:token_refresh', request=request, format=format),
+            'logout': reverse('authentication:logout', request=request, format=format),
+            'profile': reverse('authentication:profile', request=request, format=format),
+        },
+        'schools': {
+            'list': reverse('school-list', request=request, format=format),
+        },
+        'students': {
+            'list': reverse('student-list', request=request, format=format),
+            'transcripts': reverse('transcript-list', request=request, format=format),
+            'behavior_reports': reverse('behavior-report-list', request=request, format=format),
+            'payment_records': reverse('payment-record-list', request=request, format=format),
+        },
+        'parents': {
+            'dashboard': reverse('parent-dashboard-list', request=request, format=format),
+        },
+        'documentation': {
+            'swagger': reverse('swagger-ui', request=request, format=format),
+            'redoc': reverse('redoc', request=request, format=format),
+            'schema': reverse('schema', request=request, format=format),
+        }
+    })
 
 urlpatterns = [
-    # Health check and system status
-    path('health/', views.HealthCheckView, name='health-check'),
-    path('status/', views.SystemStatusView, name='system-status'),
-    
-    # API documentation and info
-    path('api-info/', views.APIInfoView, name='api-info'),
-    path('docs/', views.APIDocumentationView, name='api-docs'),
-    
-    # Utility endpoints
-    path('utils/validate-email/', views.ValidateEmailView, name='validate-email'),
-    path('utils/validate-phone/', views.ValidatePhoneView, name='validate-phone'),
-    path('utils/generate-slug/', views.GenerateSlugView, name='generate-slug'),
-    
-    # Multi-tenant utilities
-    path('tenant/switch/', views.SwitchTenantView, name='switch-tenant'),
-    path('tenant/info/', views.TenantInfoView, name='tenant-info'),
-    
-    # Search and filtering utilities
-    path('search/', views.GlobalSearchView, name='global-search'),
-    path('filter/', views.GlobalFilterView, name='global-filter'),
-    
-    # Export and import utilities
-    path('export/', views.ExportDataView, name='export-data'),
-    path('import/', views.ImportDataView, name='import-data'),
-    
-    # Analytics and reporting
-    path('analytics/', views.AnalyticsView, name='analytics'),
-    path('reports/', views.ReportsView, name='reports'),
-    path('dashboard/', views.DashboardView, name='dashboard'),
+    path('', api_root, name='api-root'),
 ] 
