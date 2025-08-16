@@ -192,14 +192,28 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     
     def validate(self, attrs):
         if attrs['password'] != attrs['password_confirm']:
-            raise serializers.ValidationError("Passwords don't match")
+            raise serializers.ValidationError("Les mots de passe ne correspondent pas")
         
         # Validate school assignment based on user type
-        if attrs['user_type'] in ['school_staff', 'parent'] and not attrs.get('school'):
-            raise serializers.ValidationError("School is required for this user type")
+        # Only 'school_staff' users must be linked to a school; parents do not require a school assignment.
+        if attrs['user_type'] == 'school_staff' and not attrs.get('school'):
+            raise serializers.ValidationError("L'école est obligatoire pour les utilisateurs du personnel de l'école.")
         
         if attrs['user_type'] == 'admin' and attrs.get('school'):
-            raise serializers.ValidationError("System admin should not be assigned to a school")
+            raise serializers.ValidationError("L'administrateur du système ne doit pas être affecté à une école")
+        
+        #validate username
+        # Username validation: must be alphanumeric, 4-30 chars, no spaces or special chars except underscore
+        import re
+        username = attrs.get('username')
+        if not username:
+            raise serializers.ValidationError("Le nom d'utilisateur est requis")
+        if not re.match(r'^[a-zA-Z0-9_]{4,30}$', username):
+            raise serializers.ValidationError(
+                "Le nom d'utilisateur doit être composé de 4 à 30 caractères, ne contenir que des lettres, des chiffres ou des traits de soulignement, et ne pas comporter d'espaces."
+            )
+        if User.objects.filter(username=username).exists():
+            raise serializers.ValidationError("Le nom d'utilisateur est déjà pris")
         
         return attrs
     
@@ -226,15 +240,15 @@ class LoginSerializer(serializers.Serializer):
             user = authenticate(username=username, password=password)
             
             if not user:
-                raise serializers.ValidationError('Invalid credentials')
+                raise serializers.ValidationError('Informations d\'identification invalides')
             
             if not user.is_active:
-                raise serializers.ValidationError('User account is disabled')
+                raise serializers.ValidationError('Le compte d\'utilisateur est désactivé')
             
             attrs['user'] = user
             return attrs
         
-        raise serializers.ValidationError('Must include username and password')
+        raise serializers.ValidationError('Doit inclure le nom d\'utilisateur et le mot de passe')
 
 
 class PasswordChangeSerializer(serializers.Serializer):

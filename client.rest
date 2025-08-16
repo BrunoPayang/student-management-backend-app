@@ -1,0 +1,10 @@
+GET http://127.0.0.1:8000/api/auth/profile/ 
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU0MjU3NzI4LCJpYXQiOjE3NTQxNzEzMjgsImp0aSI6ImE3ZDJiYmRhYjZmNjQzOGI4NDI1YjMwNDQzOWI2OWFhIiwidXNlcl9pZCI6IjcifQ.B0nOEgAdI3pKeu0jsF154vwEA4gW7D-fmlTnCZTz5Ac
+
+{
+    "username": "testuser",
+    "email": "testuser@example.com",
+    "password": "testpassword"
+    
+}
