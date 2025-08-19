@@ -35,11 +35,17 @@ class StudentViewSet(viewsets.ModelViewSet):
         """Filter queryset based on user permissions"""
         user = self.request.user
         
-        if user.user_type == 'school_staff' and user.school:
+        if user.user_type == 'admin':
+            # System Admin can see all students
+            return Student.objects.all()
+        elif user.user_type == 'school_staff' and user.school:
+            # School Staff can only see students from their school
             return Student.objects.filter(school=user.school)
         elif user.user_type == 'parent':
+            # Parents can only see their own children
             return Student.objects.filter(parents__parent=user)
         else:
+            # For other cases, return empty queryset
             return Student.objects.none()
     
     def get_serializer_class(self):
@@ -64,7 +70,13 @@ class StudentViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         """Create student with school context"""
-        serializer.save(school=self.request.user.school)
+        # Use school from request data if provided, otherwise use user's school
+        school = serializer.validated_data.get('school')
+        if not school and hasattr(self.request.user, 'school') and self.request.user.school:
+            school = self.request.user.school
+            serializer.save(school=school)
+        else:
+            serializer.save()
     
     @action(detail=True, methods=['get'])
     def academic_records(self, request, pk=None):

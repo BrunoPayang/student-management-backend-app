@@ -87,8 +87,15 @@ class SchoolCreateSerializer(serializers.ModelSerializer):
         if configuration_data:
             SchoolConfiguration.objects.create(school=school, **configuration_data)
         else:
-            # Create default configuration
-            SchoolConfiguration.objects.create(school=school)
+            # Create default configuration with required fields
+            from datetime import date
+            current_year = date.today().year
+            SchoolConfiguration.objects.create(
+                school=school,
+                academic_year_start=date(current_year, 9, 1),  # September 1st
+                academic_year_end=date(current_year + 1, 6, 30),  # June 30th next year
+                current_semester='first'
+            )
         
         return school
 

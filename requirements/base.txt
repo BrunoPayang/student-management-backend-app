@@ -12,3 +12,4 @@ requests==2.31.0
 django-extensions==3.2.3
 dj-database-url==2.1.0
 drf-spectacular==0.28.0
+python-magic==0.4.27

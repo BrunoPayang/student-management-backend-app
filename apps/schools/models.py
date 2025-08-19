@@ -96,9 +96,18 @@ class School(models.Model):
         return self.name
     
     def save(self, *args, **kwargs):
-        """Auto-generate slug if not provided"""
+        """Auto-generate slug if not provided, handling duplicates"""
         if not self.slug:
-            self.slug = slugify(self.name)
+            base_slug = slugify(self.name)
+            slug = base_slug
+            counter = 1
+            
+            # Check if slug exists and generate unique one
+            while School.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            
+            self.slug = slug
         super().save(*args, **kwargs)
     
     @property
