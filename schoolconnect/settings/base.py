@@ -157,19 +157,58 @@ REST_FRAMEWORK = {
 # Spectacular settings for Swagger documentation
 SPECTACULAR_SETTINGS = {
     'TITLE': 'SchoolConnect API',
-    'DESCRIPTION': 'API pour la gestion des écoles au Niger',
+    'DESCRIPTION': '''
+    # SchoolConnect API - Gestion des écoles au Niger
+    
+    ## 🚀 Phase 5 Features (Firebase Integration)
+    
+    ### 📁 File Management
+    - **File Upload**: Upload documents, images, and files
+    - **File Storage**: Local storage (free) or Firebase storage (optional)
+    - **File Types**: PDF, DOC, DOCX, JPG, PNG, GIF, TXT
+    - **File Organization**: School-based folder structure
+    
+    ### 📱 Notifications
+    - **Push Notifications**: Firebase Cloud Messaging (FCM)
+    - **Email Notifications**: SMTP-based email delivery
+    - **Multi-channel**: Automatic fallback to local/mock services
+    - **Bulk Notifications**: Send to multiple users at once
+    
+    ### 🔧 Storage Options
+    - **Local Storage**: Free, immediate use (default)
+    - **Firebase Storage**: Cloud-based, scalable (when configured)
+    - **Automatic Fallback**: Seamless switching between storage types
+    
+    ## 📚 Available Endpoints
+    
+    ### Authentication
+    - User registration and login
+    - JWT token management
+    - Role-based access control
+    
+    ### Core Management
+    - Schools and school configuration
+    - Students and academic records
+    - Parents and family connections
+    - Behavior reports and transcripts
+    
+    ### Phase 5 Features
+    - File upload and management
+    - Notification system
+    - Real-time updates
+    ''',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
     'COMPONENT_SPLIT_REQUEST': True,
     'SCHEMA_PATH_PREFIX': '/api/',
     'TAGS': [
-        {'name': 'authentication', 'description': 'Endpoints d\'authentification'},
-        {'name': 'schools', 'description': 'Gestion des écoles'},
-        {'name': 'students', 'description': 'Gestion des étudiants'},
-        {'name': 'parents', 'description': 'Gestion des parents'},
-        {'name': 'notifications', 'description': 'Gestion des notifications'},
-        {'name': 'files', 'description': 'Gestion des fichiers'},
-        {'name': 'common', 'description': 'Utilitaires communs'},
+        {'name': 'authentication', 'description': 'Endpoints d\'authentification - Login, register, token management'},
+        {'name': 'schools', 'description': 'Gestion des écoles - CRUD operations for schools and configuration'},
+        {'name': 'students', 'description': 'Gestion des étudiants - Student records, transcripts, behavior reports'},
+        {'name': 'parents', 'description': 'Gestion des parents - Parent accounts and child connections'},
+        {'name': 'notifications', 'description': 'Système de notifications - Push notifications, email, FCM integration'},
+        {'name': 'files', 'description': 'Gestion des fichiers - File upload, storage, and management with local/Firebase support'},
+        {'name': 'common', 'description': 'Utilitaires communs - Shared endpoints and utilities'},
     ],
     'CONTACT': {
         'name': 'SchoolConnect Support',
@@ -181,6 +220,13 @@ SPECTACULAR_SETTINGS = {
     'EXTERNAL_DOCS': {
         'description': 'Documentation complète',
         'url': 'https://docs.schoolconnect.ne',
+    },
+    'SWAGGER_UI_SETTINGS': {
+        'deepLinking': True,
+        'persistAuthorization': True,
+        'displayOperationId': True,
+        'filter': True,
+        'tryItOutEnabled': True,
     },
 }
 
@@ -211,9 +257,19 @@ CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60
 
-# Firebase Configuration
+# Firebase Configuration (Optional - will fall back to local storage if not configured)
+FIREBASE_ENABLED = config('FIREBASE_ENABLED', default=False, cast=bool)
 FIREBASE_CREDENTIALS_PATH = config('FIREBASE_CREDENTIALS_PATH', default='')
 FIREBASE_STORAGE_BUCKET = config('FIREBASE_STORAGE_BUCKET', default='')
+FIREBASE_PROJECT_ID = config('FIREBASE_PROJECT_ID', default='')
+
+# File Upload Settings
+ALLOWED_FILE_TYPES = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.gif']
+MAX_FILE_SIZE_MB = 10
+
+# Notification Settings
+ENABLE_FCM_NOTIFICATIONS = config('ENABLE_FCM_NOTIFICATIONS', default=True, cast=bool)
+ENABLE_EMAIL_NOTIFICATIONS = config('ENABLE_EMAIL_NOTIFICATIONS', default=True, cast=bool)
 
 # Email Configuration (for fallback notifications)
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

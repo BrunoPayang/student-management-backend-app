@@ -65,7 +65,7 @@ class StudentCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Student
         fields = [
-            'first_name', 'last_name', 'middle_name', 'student_id',
+            'school', 'first_name', 'last_name', 'middle_name', 'student_id',
             'class_level', 'section', 'date_of_birth', 'gender',
             'email', 'phone', 'address', 'city', 'state',
             'blood_group', 'emergency_contact', 'medical_conditions',
@@ -74,14 +74,13 @@ class StudentCreateSerializer(serializers.ModelSerializer):
     
     def validate_student_id(self, value):
         """Ensure student ID is unique within school"""
-        school = self.context['request'].user.school
-        if Student.objects.filter(school=school, student_id=value).exists():
+        school = self.initial_data.get('school')
+        if school and Student.objects.filter(school=school, student_id=value).exists():
             raise serializers.ValidationError("A student with this ID already exists in this school.")
         return value
     
     def create(self, validated_data):
-        """Create student with school context"""
-        validated_data['school'] = self.context['request'].user.school
+        """Create student"""
         return super().create(validated_data)
 
 

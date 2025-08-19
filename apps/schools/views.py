@@ -1,7 +1,7 @@
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Count, Q
 from django.utils import timezone
@@ -54,7 +54,7 @@ class SchoolViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         """Set permissions based on action"""
         if self.action in ['create', 'destroy']:
-            permission_classes = [IsAuthenticated, IsAdminUser]
+            permission_classes = [IsAuthenticated]
         elif self.action in ['update', 'partial_update']:
             permission_classes = [IsAuthenticated]
         else:
@@ -62,8 +62,36 @@ class SchoolViewSet(viewsets.ModelViewSet):
         
         return [permission() for permission in permission_classes]
     
+    def check_object_permissions(self, request, obj):
+        """Check object-level permissions"""
+        super().check_object_permissions(request, obj)
+        
+        user = request.user
+        
+        # Admin users can manage all schools
+        if user.user_type == 'admin':
+            return
+            
+        # School staff can only manage their own school
+        if user.user_type == 'school_staff' and user.school:
+            if obj.id != user.school.id:
+                from rest_framework.exceptions import PermissionDenied
+                raise PermissionDenied("You can only manage your own school.")
+        
+        # Other users cannot manage schools
+        if user.user_type not in ['admin', 'school_staff']:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("You don't have permission to manage schools.")
+    
     def perform_create(self, serializer):
         """Create school with default configuration"""
+        user = self.request.user
+        
+        # Only admin users can create schools
+        if user.user_type != 'admin':
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Only admin users can create schools.")
+        
         school = serializer.save()
         
         # Create default configuration if not provided

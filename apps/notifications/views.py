@@ -1,104 +1,291 @@
-from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import Q
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiExample
 
-@api_view(['GET'])
-def NotificationListView(request):
-    """Placeholder for notification list - will be implemented in Phase 6"""
-    return Response({'message': 'Notification list endpoint - coming soon'}, status=status.HTTP_501_NOT_IMPLEMENTED)
+from .models import Notification, NotificationDelivery
+from .serializers import NotificationSerializer, NotificationCreateSerializer, NotificationDeliverySerializer
+from .services import NotificationService
+from apps.authentication.permissions import IsSchoolStaff
+from apps.common.pagination import StandardResultsSetPagination
 
-@api_view(['POST'])
-def NotificationCreateView(request):
-    """Placeholder for notification create - will be implemented in Phase 6"""
-    return Response({'message': 'Notification create endpoint - coming soon'}, status=status.HTTP_501_NOT_IMPLEMENTED)
+@extend_schema_view(
+    list=extend_schema(
+        summary="List Notifications",
+        description="Retrieve a list of notifications with pagination and filtering",
+        tags=['notifications'],
+        parameters=[
+            OpenApiParameter(name='notification_type', description='Filter by notification type', required=False),
+            OpenApiParameter(name='sent_via_fcm', description='Filter by FCM delivery status', required=False),
+            OpenApiParameter(name='created_at', description='Filter by creation date', required=False),
+        ]
+    ),
+    create=extend_schema(
+        summary="Create Notification",
+        description="Create a new notification (use send_bulk for sending to multiple users)",
+        tags=['notifications']
+    ),
+    retrieve=extend_schema(
+        summary="Get Notification Details",
+        description="Retrieve detailed information about a specific notification",
+        tags=['notifications']
+    ),
+    update=extend_schema(
+        summary="Update Notification",
+        description="Update notification content and settings",
+        tags=['notifications']
+    ),
+    destroy=extend_schema(
+        summary="Delete Notification",
+        description="Delete a notification",
+        tags=['notifications']
+    )
+)
+class NotificationViewSet(viewsets.ModelViewSet):
+    """ViewSet for notification management with FCM and email support"""
+    queryset = Notification.objects.all()
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['notification_type', 'sent_via_fcm', 'created_at']
 
-@api_view(['GET'])
-def NotificationDetailView(request, pk):
-    """Placeholder for notification detail - will be implemented in Phase 6"""
-    return Response({'message': 'Notification detail endpoint - coming soon'}, status=status.HTTP_501_NOT_IMPLEMENTED)
+    def get_queryset(self):
+        """Filter by school and permissions"""
+        user = self.request.user
 
-@api_view(['PUT'])
-def NotificationUpdateView(request, pk):
-    """Placeholder for notification update - will be implemented in Phase 6"""
-    return Response({'message': 'Notification update endpoint - coming soon'}, status=status.HTTP_501_NOT_IMPLEMENTED)
+        if user.is_system_admin():
+            return Notification.objects.all()
+        elif user.is_school_staff():
+            return Notification.objects.filter(school=user.school)
+        elif user.is_parent():
+            return Notification.objects.filter(
+                target_users=user,
+                school__students__parents__parent=user
+            ).distinct()
+        else:
+            return Notification.objects.none()
 
-@api_view(['DELETE'])
-def NotificationDeleteView(request, pk):
-    """Placeholder for notification delete - will be implemented in Phase 6"""
-    return Response({'message': 'Notification delete endpoint - coming soon'}, status=status.HTTP_501_NOT_IMPLEMENTED)
+    def get_serializer_class(self):
+        """Return appropriate serializer"""
+        if self.action == 'create':
+            return NotificationCreateSerializer
+        return NotificationSerializer
 
-@api_view(['GET'])
-def FCMTokenView(request):
-    """Placeholder for FCM token - will be implemented in Phase 6"""
-    return Response({'message': 'FCM token endpoint - coming soon'}, status=status.HTTP_501_NOT_IMPLEMENTED)
+    def get_permissions(self):
+        """Set permissions based on action"""
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            permission_classes = [IsAuthenticated, IsSchoolStaff]
+        else:
+            permission_classes = [IsAuthenticated]
 
-@api_view(['PUT'])
-def FCMTokenUpdateView(request):
-    """Placeholder for FCM token update - will be implemented in Phase 6"""
-    return Response({'message': 'FCM token update endpoint - coming soon'}, status=status.HTTP_501_NOT_IMPLEMENTED)
+        return [permission() for permission in permission_classes]
 
-@api_view(['DELETE'])
-def FCMTokenDeleteView(request):
-    """Placeholder for FCM token delete - will be implemented in Phase 6"""
-    return Response({'message': 'FCM token delete endpoint - coming soon'}, status=status.HTTP_501_NOT_IMPLEMENTED)
+    @extend_schema(
+        summary="Send Bulk Notification",
+        description="""
+        Send a notification to multiple users simultaneously.
+        
+        **Features:**
+        - Multi-user targeting
+        - Automatic delivery tracking
+        - FCM push notifications (when configured)
+        - Email fallback (when configured)
+        - Mock service for development (free)
+        
+        **Delivery Channels:**
+        - **FCM**: Firebase Cloud Messaging for push notifications
+        - **Email**: SMTP-based email delivery
+        - **Mock**: Local logging for development/testing
+        
+        **Notification Types:**
+        - Academic updates
+        - Behavior reports
+        - Payment reminders
+        - General announcements
+        
+        **Targeting Options:**
+        - Specific user IDs
+        - All school users (if no user_ids provided)
+        - School-based filtering
+        """,
+        tags=['notifications'],
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'title': {'type': 'string', 'description': 'Notification title'},
+                    'body': {'type': 'string', 'description': 'Notification content'},
+                    'notification_type': {
+                        'type': 'string', 
+                        'enum': ['academic', 'behavior', 'payment', 'general'],
+                        'description': 'Type of notification'
+                    },
+                    'user_ids': {
+                        'type': 'array', 
+                        'items': {'type': 'integer'},
+                        'description': 'Target user IDs (empty for all school users)'
+                    },
+                    'data': {
+                        'type': 'object',
+                        'description': 'Additional data for the notification'
+                    }
+                },
+                'required': ['title', 'body', 'notification_type']
+            }
+        },
+        responses={
+            200: {
+                'description': 'Bulk notification sent successfully',
+                'type': 'object',
+                'properties': {
+                    'message': {'type': 'string'},
+                    'results': {
+                        'type': 'object',
+                        'properties': {
+                            'fcm_sent': {'type': 'integer'},
+                            'email_sent': {'type': 'integer'},
+                            'total_targets': {'type': 'integer'}
+                        }
+                    }
+                }
+            },
+            400: {'description': 'Validation error'},
+            500: {'description': 'Sending failed'}
+        },
+        examples=[
+            OpenApiExample(
+                'Academic Update',
+                value={
+                    'title': 'New Grade Posted',
+                    'body': 'Your child\'s latest grades have been posted. Check the portal for details.',
+                    'notification_type': 'academic',
+                    'user_ids': [1, 2, 3],
+                    'data': {'subject': 'Mathematics', 'grade': 'A'}
+                },
+                request_only=True
+            ),
+            OpenApiExample(
+                'General Announcement',
+                value={
+                    'title': 'School Event Reminder',
+                    'body': 'Don\'t forget about the parent-teacher meeting tomorrow at 3 PM.',
+                    'notification_type': 'general',
+                    'data': {'event_date': '2024-01-20', 'event_time': '15:00'}
+                },
+                request_only=True
+            )
+        ]
+    )
+    @action(detail=False, methods=['post'])
+    def send_bulk(self, request):
+        """Send bulk notification to multiple users"""
+        try:
+            title = request.data.get('title')
+            body = request.data.get('body')
+            notification_type = request.data.get('notification_type', 'general')
+            user_ids = request.data.get('user_ids', [])
 
-@api_view(['POST'])
-def SendNotificationView(request):
-    """Placeholder for send notification - will be implemented in Phase 6"""
-    return Response({'message': 'Send notification endpoint - coming soon'}, status=status.HTTP_501_NOT_IMPLEMENTED)
+            if not title or not body:
+                return Response(
+                    {'error': 'Title and body are required'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
-@api_view(['POST'])
-def SendBulkNotificationView(request):
-    """Placeholder for send bulk notification - will be implemented in Phase 6"""
-    return Response({'message': 'Send bulk notification endpoint - coming soon'}, status=status.HTTP_501_NOT_IMPLEMENTED)
+            # Get target users
+            if user_ids:
+                from apps.authentication.models import User
+                users = User.objects.filter(id__in=user_ids, school=request.user.school)
+            else:
+                from apps.authentication.models import User
+                users = User.objects.filter(school=request.user.school)
 
-@api_view(['GET'])
-def NotificationTemplateListView(request):
-    """Placeholder for notification template list - will be implemented in Phase 6"""
-    return Response({'message': 'Notification template list endpoint - coming soon'}, status=status.HTTP_501_NOT_IMPLEMENTED)
+            # Send notification
+            notification_service = NotificationService()
+            results = notification_service.send_bulk_notification(
+                users=users,
+                title=title,
+                body=body,
+                notification_type=notification_type,
+                school=request.user.school,
+                data=request.data.get('data', {})
+            )
 
-@api_view(['POST'])
-def NotificationTemplateCreateView(request):
-    """Placeholder for notification template create - will be implemented in Phase 6"""
-    return Response({'message': 'Notification template create endpoint - coming soon'}, status=status.HTTP_501_NOT_IMPLEMENTED)
+            return Response({
+                'message': 'Bulk notification sent successfully',
+                'results': results
+            })
 
-@api_view(['GET'])
-def NotificationTemplateDetailView(request, pk):
-    """Placeholder for notification template detail - will be implemented in Phase 6"""
-    return Response({'message': 'Notification template detail endpoint - coming soon'}, status=status.HTTP_501_NOT_IMPLEMENTED)
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
-@api_view(['PUT'])
-def NotificationTemplateUpdateView(request, pk):
-    """Placeholder for notification template update - will be implemented in Phase 6"""
-    return Response({'message': 'Notification template update endpoint - coming soon'}, status=status.HTTP_501_NOT_IMPLEMENTED)
+    @extend_schema(
+        summary="Resend Notification",
+        description="Resend a notification to all target users",
+        tags=['notifications'],
+        responses={
+            200: {
+                'description': 'Notification resent successfully',
+                'type': 'object',
+                'properties': {
+                    'message': {'type': 'string'},
+                    'results': {
+                        'type': 'object',
+                        'properties': {
+                            'fcm_sent': {'type': 'integer'},
+                            'email_sent': {'type': 'integer'},
+                            'total_targets': {'type': 'integer'}
+                        }
+                    }
+                }
+            },
+            500: {'description': 'Resending failed'}
+        }
+    )
+    @action(detail=True, methods=['post'])
+    def resend(self, request, pk=None):
+        """Resend notification"""
+        notification = self.get_object()
 
-@api_view(['DELETE'])
-def NotificationTemplateDeleteView(request, pk):
-    """Placeholder for notification template delete - will be implemented in Phase 6"""
-    return Response({'message': 'Notification template delete endpoint - coming soon'}, status=status.HTTP_501_NOT_IMPLEMENTED)
+        try:
+            notification_service = NotificationService()
+            results = notification_service.send_notification(notification)
 
-@api_view(['GET'])
-def NotificationHistoryView(request):
-    """Placeholder for notification history - will be implemented in Phase 6"""
-    return Response({'message': 'Notification history endpoint - coming soon'}, status=status.HTTP_501_NOT_IMPLEMENTED)
+            return Response({
+                'message': 'Notification resent successfully',
+                'results': results
+            })
 
-@api_view(['GET'])
-def NotificationAnalyticsView(request):
-    """Placeholder for notification analytics - will be implemented in Phase 6"""
-    return Response({'message': 'Notification analytics endpoint - coming soon'}, status=status.HTTP_501_NOT_IMPLEMENTED)
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
-@api_view(['GET'])
-def NotificationStatsView(request):
-    """Placeholder for notification stats - will be implemented in Phase 6"""
-    return Response({'message': 'Notification stats endpoint - coming soon'}, status=status.HTTP_501_NOT_IMPLEMENTED)
+@extend_schema_view(
+    list=extend_schema(
+        summary="List Notification Deliveries",
+        description="Retrieve delivery tracking information for notifications",
+        tags=['notifications']
+    ),
+    retrieve=extend_schema(
+        summary="Get Delivery Details",
+        description="Retrieve detailed delivery information for a specific notification",
+        tags=['notifications']
+    )
+)
+class NotificationDeliveryViewSet(viewsets.ReadOnlyModelViewSet):
+    """ViewSet for notification delivery tracking"""
+    queryset = NotificationDelivery.objects.all()
+    serializer_class = NotificationDeliverySerializer
+    permission_classes = [IsAuthenticated, IsSchoolStaff]
 
-@api_view(['GET'])
-def NotificationPreferencesView(request):
-    """Placeholder for notification preferences - will be implemented in Phase 6"""
-    return Response({'message': 'Notification preferences endpoint - coming soon'}, status=status.HTTP_501_NOT_IMPLEMENTED)
-
-@api_view(['PUT'])
-def NotificationPreferencesUpdateView(request):
-    """Placeholder for notification preferences update - will be implemented in Phase 6"""
-    return Response({'message': 'Notification preferences update endpoint - coming soon'}, status=status.HTTP_501_NOT_IMPLEMENTED)
+    def get_queryset(self):
+        """Filter by school"""
+        return NotificationDelivery.objects.filter(
+            notification__school=self.request.user.school
+        )
