@@ -25,6 +25,7 @@ urlpatterns = [
     path('', include('apps.parents.urls')),
     path('', include('apps.files.urls')),
     path('', include('apps.notifications.urls')),
+    path('', include('apps.tasks.urls')),
 ]
 
 if settings.DEBUG:

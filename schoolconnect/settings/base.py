@@ -29,6 +29,8 @@ THIRD_PARTY_APPS = [
     'django_extensions',
     'drf_spectacular',
     'django_filters',
+    'django_celery_results',
+    'django_celery_beat',
 ]
 
 LOCAL_APPS = [
@@ -39,6 +41,7 @@ LOCAL_APPS = [
     'apps.notifications',
     'apps.files',
     'apps.common',
+    'apps.tasks',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -251,11 +254,33 @@ SIMPLE_JWT = {
 AUTH_USER_MODEL = 'authentication.User'
 
 # Celery Configuration
-CELERY_BROKER_URL = config('REDIS_URL', default='redis://localhost:6379/0')
-CELERY_RESULT_BACKEND = config('REDIS_URL', default='redis://localhost:6379/0')
+CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default='redis://localhost:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
+
+# Celery Beat Schedule
+CELERY_BEAT_SCHEDULE = {
+    'send-scheduled-notifications': {
+        'task': 'apps.notifications.tasks.send_scheduled_notifications',
+        'schedule': 300.0,  # Every 5 minutes
+    },
+    'cleanup-old-files': {
+        'task': 'apps.files.tasks.cleanup_old_files',
+        'schedule': 86400.0,  # Daily
+    },
+    'generate-monthly-reports': {
+        'task': 'apps.reports.tasks.generate_monthly_reports',
+        'schedule': 2592000.0,  # Monthly
+    },
+}
+
+# Celery Results
+CELERY_RESULT_EXPIRES = 3600  # 1 hour
 CELERY_TASK_TRACK_STARTED = True
-CELERY_TASK_TIME_LIMIT = 30 * 60
+CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes
 
 # Firebase Configuration (Optional - will fall back to local storage if not configured)
 FIREBASE_ENABLED = config('FIREBASE_ENABLED', default=False, cast=bool)
