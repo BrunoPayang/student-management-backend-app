@@ -8,7 +8,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
 from rest_framework import serializers
 
 from .models import Notification, NotificationDelivery
-from .serializers import NotificationSerializer, NotificationCreateSerializer, NotificationDeliverySerializer
+from .serializers import NotificationSerializer, NotificationCreateSerializer, NotificationUpdateSerializer, NotificationDeliverySerializer
 from .services import NotificationService
 from apps.authentication.permissions import IsSchoolStaff
 from apps.common.pagination import StandardResultsSetPagination
@@ -78,6 +78,8 @@ class NotificationViewSet(viewsets.ModelViewSet):
         """Return appropriate serializer"""
         if self.action == 'create':
             return NotificationCreateSerializer
+        elif self.action in ['update', 'partial_update']:
+            return NotificationUpdateSerializer
         return NotificationSerializer
 
     def get_permissions(self):
