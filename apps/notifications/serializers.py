@@ -30,6 +30,28 @@ class NotificationCreateSerializer(serializers.ModelSerializer):
         if value not in valid_types:
             raise serializers.ValidationError("Invalid notification type")
         return value
+    
+    def create(self, validated_data):
+        """Create notification with school from user context"""
+        # Get school from user context
+        user = self.context['request'].user
+        if not hasattr(user, 'school') or not user.school:
+            raise serializers.ValidationError("User must be associated with a school to create notifications")
+        
+        # Add school to validated data
+        validated_data['school'] = user.school
+        
+        # Create notification
+        notification = Notification.objects.create(**validated_data)
+        
+        # Handle target users if specified
+        target_users = validated_data.get('target_users', [])
+        if target_users:
+            from apps.authentication.models import User
+            users = User.objects.filter(id__in=target_users, school=user.school)
+            notification.target_users.set(users)
+        
+        return notification
 
 class NotificationDeliverySerializer(serializers.ModelSerializer):
     """Serializer for notification delivery tracking"""
