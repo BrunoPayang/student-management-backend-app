@@ -30,4 +30,13 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # Add browsable API renderer for development
 REST_FRAMEWORK['DEFAULT_RENDERER_CLASSES'].append(
     'rest_framework.renderers.BrowsableAPIRenderer'
-) 
+)
+
+# Celery Configuration for Development
+CELERY_TASK_ALWAYS_EAGER = True  # Run tasks synchronously in development
+CELERY_TASK_EAGER_PROPAGATES = True
+
+# Redis Configuration for Development
+REDIS_HOST = 'localhost'
+REDIS_PORT = 6379
+REDIS_DB = 0 
