@@ -169,7 +169,24 @@ class NotificationViewSet(viewsets.ModelViewSet):
                 users = User.objects.filter(id__in=user_ids, school=request.user.school)
             else:
                 from apps.authentication.models import User
+                # Get all users in the school, including parents of students
                 users = User.objects.filter(school=request.user.school)
+                
+                # Also include parents who have students in this school but don't have school set
+                from apps.students.models import ParentStudent
+                parent_students = ParentStudent.objects.filter(
+                    student__school=request.user.school
+                ).values_list('parent_id', flat=True).distinct()
+                
+                # Add parents who aren't already in the users queryset
+                additional_parents = User.objects.filter(
+                    id__in=parent_students,
+                    school__isnull=True
+                )
+                
+                # Combine the querysets
+                from django.db.models import Q
+                users = users | additional_parents
 
             # Send notification
             notification_service = NotificationService()

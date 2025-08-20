@@ -10,10 +10,10 @@ class FileUpload(models.Model):
     school = models.ForeignKey(School, on_delete=models.CASCADE, related_name='files')
     
     original_name = models.CharField(max_length=255)
-    firebase_path = models.CharField(max_length=500)
-    firebase_url = models.URLField()
-    file_size = models.BigIntegerField()
-    content_type = models.CharField(max_length=100)
+    firebase_path = models.CharField(max_length=500, null=True, blank=True)
+    firebase_url = models.URLField(null=True, blank=True)
+    file_size = models.BigIntegerField(null=True, blank=True)
+    content_type = models.CharField(max_length=100, null=True, blank=True)
     
     file_type = models.CharField(
         max_length=50,
@@ -47,4 +47,6 @@ class FileUpload(models.Model):
     
     @property
     def file_size_mb(self):
+        if self.file_size is None:
+            return None
         return round(self.file_size / (1024 * 1024), 2)

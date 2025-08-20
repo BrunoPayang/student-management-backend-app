@@ -54,6 +54,20 @@ class FileUploadAdminForm(forms.ModelForm):
                 extension = file_obj.name.split('.')[-1] if '.' in file_obj.name else ''
                 filename = f"{timestamp}_{unique_id}.{extension}"
                 cleaned_data['firebase_path'] = f"schools/{school_id}/{file_type}/{filename}"
+        else:
+            # If no file is uploaded, ensure required fields are provided
+            if not cleaned_data.get('original_name'):
+                raise forms.ValidationError("Original name is required when no file is uploaded")
+            
+            # Set default values for optional fields if not provided
+            if not cleaned_data.get('file_size'):
+                cleaned_data['file_size'] = None
+            if not cleaned_data.get('content_type'):
+                cleaned_data['content_type'] = None
+            if not cleaned_data.get('firebase_path'):
+                cleaned_data['firebase_path'] = None
+            if not cleaned_data.get('firebase_url'):
+                cleaned_data['firebase_url'] = None
         
         return cleaned_data
 

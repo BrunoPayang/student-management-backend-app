@@ -210,11 +210,32 @@ class ParentDashboardViewSet(viewsets.ViewSet):
             # Get notifications for the parent's school
             from apps.notifications.models import Notification, NotificationDelivery
             
-            # Get notifications that target this parent or are general school notifications
+            # Determine the parent's school - either from user.school or from student relationships
+            parent_school = request.user.school
+            if not parent_school:
+                # If user.school is not set, get it from their student relationships
+                from apps.students.models import ParentStudent
+                parent_student = ParentStudent.objects.filter(parent=request.user).first()
+                if parent_student:
+                    parent_school = parent_student.student.school
+            
+            if not parent_school:
+                return Response(
+                    {'error': 'Parent is not associated with any school'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Get notifications that target this parent OR are general school notifications
+            # For bulk notifications, we need to check if the parent is in target_users
             parent_notifications = Notification.objects.filter(
-                Q(school=request.user.school) &
+                Q(school=parent_school) &
                 (Q(target_users=request.user) | Q(target_users__isnull=True))
             ).distinct().order_by('-created_at')
+            
+            # Debug: Log the query and results
+            print(f"Parent notifications query: {parent_notifications.query}")
+            print(f"Parent user: {request.user.username}, School: {parent_school}")
+            print(f"Found {parent_notifications.count()} notifications")
             
             # Apply pagination manually since this is a ViewSet, not ModelViewSet
             paginator = self.pagination_class()
