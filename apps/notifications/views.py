@@ -28,51 +28,12 @@ from apps.common.pagination import StandardResultsSetPagination
         summary="Create Notification",
         description="Create a new notification. The school will be automatically assigned from your user account.",
         tags=['notifications'],
-        request={
-            'application/json': {
-                'type': 'object',
-                'properties': {
-                    'title': {'type': 'string', 'description': 'Notification title'},
-                    'body': {'type': 'string', 'description': 'Notification content'},
-                    'notification_type': {
-                        'type': 'string', 
-                        'enum': ['academic', 'behavior', 'payment', 'general'],
-                        'description': 'Type of notification'
-                    },
-                    'target_users': {
-                        'type': 'array', 
-                        'items': {'type': 'integer'},
-                        'description': 'Target user IDs (optional)'
-                    },
-                    'data': {
-                        'type': 'object',
-                        'description': 'Additional data for the notification (optional)'
-                    }
-                },
-                'required': ['title', 'body', 'notification_type']
-            }
-        ),
+        request=NotificationCreateSerializer,
         responses={
             201: NotificationSerializer,
             400: {'description': 'Validation error - check that user has a school assigned'},
             500: {'description': 'Creation failed'}
-        },
-        examples=[
-            OpenApiExample(
-                'Test Notification',
-                value={
-                    'title': 'Test Notification from Postman',
-                    'body': 'This is a test notification sent via Postman to test Phase 5 features',
-                    'notification_type': 'general',
-                    'data': {
-                        'test_source': 'postman',
-                        'feature': 'notifications',
-                        'timestamp': '2024-01-19'
-                    }
-                },
-                request_only=True
-            )
-        ]
+        }
     ),
     retrieve=extend_schema(
         summary="Get Notification Details",
@@ -139,32 +100,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
 
     @extend_schema(
         summary="Send Bulk Notification",
-        description="""
-        Send a notification to multiple users simultaneously.
-        
-        **Features:**
-        - Multi-user targeting
-        - Automatic delivery tracking
-        - FCM push notifications (when configured)
-        - Email fallback (when configured)
-        - Mock service for development (free)
-        
-        **Delivery Channels:**
-        - **FCM**: Firebase Cloud Messaging for push notifications
-        - **Email**: SMTP-based email delivery
-        - **Mock**: Local logging for development/testing
-        
-        **Notification Types:**
-        - Academic updates
-        - Behavior reports
-        - Payment reminders
-        - General announcements
-        
-        **Targeting Options:**
-        - Specific user IDs
-        - All school users (if no user_ids provided)
-        - School-based filtering
-        """,
+        description="Send a notification to multiple users simultaneously",
         tags=['notifications'],
         request={
             'application/json': {
@@ -208,30 +144,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
             },
             400: {'description': 'Validation error'},
             500: {'description': 'Sending failed'}
-        },
-        examples=[
-            OpenApiExample(
-                'Academic Update',
-                value={
-                    'title': 'New Grade Posted',
-                    'body': 'Your child\'s latest grades have been posted. Check the portal for details.',
-                    'notification_type': 'academic',
-                    'user_ids': [1, 2, 3],
-                    'data': {'subject': 'Mathematics', 'grade': 'A'}
-                },
-                request_only=True
-            ),
-            OpenApiExample(
-                'General Announcement',
-                value={
-                    'title': 'School Event Reminder',
-                    'body': 'Don\'t forget about the parent-teacher meeting tomorrow at 3 PM.',
-                    'notification_type': 'general',
-                    'data': {'event_date': '2024-01-20', 'event_time': '15:00'}
-                },
-                request_only=True
-            )
-        ]
+        }
     )
     @action(detail=False, methods=['post'])
     def send_bulk(self, request):
