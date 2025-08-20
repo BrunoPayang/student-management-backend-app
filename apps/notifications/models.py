@@ -24,6 +24,7 @@ class Notification(models.Model):
     target_users = models.ManyToManyField(User, related_name='notifications')
     sent_via_fcm = models.BooleanField(default=False)
     sent_via_email = models.BooleanField(default=False)
+    sent_via_sms = models.BooleanField(default=False)
     
     data = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -40,11 +41,13 @@ class NotificationDelivery(models.Model):
     
     delivered_via_fcm = models.BooleanField(default=False)
     delivered_via_email = models.BooleanField(default=False)
+    delivered_via_sms = models.BooleanField(default=False)
     fcm_message_id = models.CharField(max_length=100, blank=True)
     fcm_error = models.TextField(blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
     delivered_at = models.DateTimeField(null=True, blank=True)
+    read_at = models.DateTimeField(null=True, blank=True)
     
     class Meta:
         db_table = 'notifications_notification_delivery'

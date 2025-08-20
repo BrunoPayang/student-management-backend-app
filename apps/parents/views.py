@@ -52,8 +52,8 @@ from apps.common.pagination import StandardResultsSetPagination
         tags=['parents']
     ),
     notification_preferences=extend_schema(
-        summary="Update Notification Preferences",
-        description="Update the parent's notification preferences",
+        summary="Get/Update Notification Preferences",
+        description="Get current notification preferences or update them",
         tags=['parents']
     ),
     mark_notification_read=extend_schema(
@@ -240,22 +240,25 @@ class ParentDashboardViewSet(viewsets.ViewSet):
         """Update notification preferences"""
         user = request.user
         
+        # Get or create user profile
+        profile, created = user.profile.get_or_create()
+        
         # Update notification preferences
         if 'receive_sms' in request.data:
-            user.receive_sms = request.data['receive_sms']
+            profile.sms_notifications = request.data['receive_sms']
         if 'receive_email' in request.data:
-            user.receive_email = request.data['receive_email']
+            profile.email_notifications = request.data['receive_email']
         if 'receive_push' in request.data:
-            user.receive_push = request.data['receive_push']
+            profile.push_notifications = request.data['receive_push']
         
-        user.save()
+        profile.save()
         
         return Response({
             'message': 'Notification preferences updated successfully',
             'preferences': {
-                'receive_sms': user.receive_sms,
-                'receive_email': user.receive_email,
-                'receive_push': user.receive_push
+                'receive_sms': profile.sms_notifications,
+                'receive_email': profile.email_notifications,
+                'receive_push': profile.push_notifications
             }
         })
     
@@ -316,6 +319,27 @@ class ParentDashboardViewSet(viewsets.ViewSet):
         except Exception as e:
             return Response(
                 {'error': f'Error counting unread notifications: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    @action(detail=False, methods=['get'])
+    def notification_preferences(self, request):
+        """Get current notification preferences"""
+        try:
+            # Get or create user profile
+            profile, created = request.user.profile.get_or_create()
+            
+            return Response({
+                'preferences': {
+                    'receive_sms': profile.sms_notifications,
+                    'receive_email': profile.email_notifications,
+                    'receive_push': profile.push_notifications
+                }
+            })
+            
+        except Exception as e:
+            return Response(
+                {'error': f'Error retrieving notification preferences: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     

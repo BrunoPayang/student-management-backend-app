@@ -12,6 +12,7 @@ class NotificationService:
         results = {
             'fcm_sent': 0,
             'email_sent': 0,
+            'sms_sent': 0,
             'total_targets': notification.target_users.count()
         }
         
@@ -22,24 +23,32 @@ class NotificationService:
             )
             
             # Send via FCM
-            if user.fcm_token and user.receive_push:
+            if user.fcm_token and getattr(user.profile, 'push_notifications', True):
                 fcm_success = self._send_fcm_to_user(user, notification)
                 if fcm_success:
                     delivery.delivered_via_fcm = True
                     results['fcm_sent'] += 1
             
             # Send via email
-            if user.email and user.receive_email:
+            if user.email and getattr(user.profile, 'email_notifications', True):
                 email_success = self._send_email_to_user(user, notification)
                 if email_success:
                     delivery.delivered_via_email = True
                     results['email_sent'] += 1
+            
+            # Send via SMS (if configured)
+            if user.phone and getattr(user.profile, 'sms_notifications', True):
+                sms_success = self._send_sms_to_user(user, notification)
+                if sms_success:
+                    delivery.delivered_via_sms = True
+                    results['sms_sent'] = results.get('sms_sent', 0) + 1
             
             delivery.delivered_at = timezone.now()
             delivery.save()
         
         notification.sent_via_fcm = results['fcm_sent'] > 0
         notification.sent_via_email = results['email_sent'] > 0
+        notification.sent_via_sms = results.get('sms_sent', 0) > 0
         notification.sent_at = timezone.now()
         notification.save()
         
@@ -78,6 +87,29 @@ class NotificationService:
             return True
         except Exception as e:
             print(f"Email send error for user {user.id}: {e}")
+            return False
+    
+    def _send_sms_to_user(self, user, notification):
+        """Send SMS notification to user"""
+        try:
+            # This would integrate with an SMS service provider
+            # For now, we'll just log the attempt
+            message = f"[{notification.school.name}] {notification.title}: {notification.body}"
+            print(f"SMS would be sent to {user.phone}: {message}")
+            
+            # In production, you would use a service like Twilio, AWS SNS, etc.
+            # Example with Twilio:
+            # from twilio.rest import Client
+            # client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+            # message = client.messages.create(
+            #     body=message,
+            #     from_=settings.TWILIO_PHONE_NUMBER,
+            #     to=user.phone
+            # )
+            
+            return True
+        except Exception as e:
+            print(f"SMS send error for user {user.id}: {e}")
             return False
     
     def send_bulk_notification(self, users: list, title: str, body: str, 
