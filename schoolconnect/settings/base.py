@@ -182,6 +182,29 @@ SPECTACULAR_SETTINGS = {
     - **Firebase Storage**: Cloud-based, scalable (when configured)
     - **Automatic Fallback**: Seamless switching between storage types
     
+    ## 🚀 Phase 6 Features (Background Tasks & Notifications)
+    
+    ### ⚡ Background Processing
+    - **Celery Integration**: Asynchronous task processing
+    - **Redis Broker**: High-performance message queuing
+    - **Task Monitoring**: Real-time task status and worker monitoring
+    
+    ### 🔄 Automated Tasks
+    - **Scheduled Notifications**: Every 5 minutes
+    - **File Cleanup**: Daily maintenance
+    - **Monthly Reports**: Automated report generation
+    
+    ### 📊 Task Management
+    - **Task Results**: Track completed tasks
+    - **Worker Status**: Monitor Celery workers
+    - **Active Tasks**: View currently running tasks
+    
+    ### 👨‍👩‍👧‍👦 Enhanced Parent Experience
+    - **Real-time Notifications**: Instant updates via background processing
+    - **Notification Preferences**: Customize delivery channels
+    - **Read Status Tracking**: Mark notifications as read
+    - **Unread Counts**: Track pending notifications
+    
     ## 📚 Available Endpoints
     
     ### Authentication
@@ -199,6 +222,11 @@ SPECTACULAR_SETTINGS = {
     - File upload and management
     - Notification system
     - Real-time updates
+    
+    ### Phase 6 Features
+    - Background task processing
+    - Enhanced notification system
+    - Task monitoring and management
     ''',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
@@ -208,9 +236,10 @@ SPECTACULAR_SETTINGS = {
         {'name': 'authentication', 'description': 'Endpoints d\'authentification - Login, register, token management'},
         {'name': 'schools', 'description': 'Gestion des écoles - CRUD operations for schools and configuration'},
         {'name': 'students', 'description': 'Gestion des étudiants - Student records, transcripts, behavior reports'},
-        {'name': 'parents', 'description': 'Gestion des parents - Parent accounts and child connections'},
+        {'name': 'parents', 'description': 'Gestion des parents - Parent accounts, child connections, and notifications'},
         {'name': 'notifications', 'description': 'Système de notifications - Push notifications, email, FCM integration'},
         {'name': 'files', 'description': 'Gestion des fichiers - File upload, storage, and management with local/Firebase support'},
+        {'name': 'tasks', 'description': 'Système de tâches - Background task monitoring and management with Celery'},
         {'name': 'common', 'description': 'Utilitaires communs - Shared endpoints and utilities'},
     ],
     'CONTACT': {
