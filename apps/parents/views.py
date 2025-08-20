@@ -2,7 +2,10 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.pagination import PageNumberPagination
 from django.db.models import Q, Sum, Count, Avg
+from django.utils import timezone
+from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from apps.students.models import Student, Transcript, BehaviorReport, PaymentRecord
 from apps.students.serializers import (
@@ -12,6 +15,63 @@ from apps.students.serializers import (
 from apps.common.pagination import StandardResultsSetPagination
 
 
+@extend_schema_view(
+    my_children=extend_schema(
+        summary="Get My Children",
+        description="Retrieve all children of the authenticated parent",
+        tags=['parents']
+    ),
+    child_details=extend_schema(
+        summary="Get Child Details",
+        description="Get detailed information about a specific child",
+        tags=['parents']
+    ),
+    child_transcripts=extend_schema(
+        summary="Get Child Transcripts",
+        description="Retrieve academic transcripts for a specific child",
+        tags=['parents']
+    ),
+    child_behavior=extend_schema(
+        summary="Get Child Behavior Reports",
+        description="Retrieve behavior reports for a specific child",
+        tags=['parents']
+    ),
+    child_payments=extend_schema(
+        summary="Get Child Payment Records",
+        description="Retrieve payment records for a specific child",
+        tags=['parents']
+    ),
+    child_statistics=extend_schema(
+        summary="Get Child Statistics",
+        description="Get comprehensive statistics for a specific child",
+        tags=['parents']
+    ),
+    notifications=extend_schema(
+        summary="Get Parent Notifications",
+        description="Retrieve notifications relevant to the parent",
+        tags=['parents']
+    ),
+    notification_preferences=extend_schema(
+        summary="Update Notification Preferences",
+        description="Update the parent's notification preferences",
+        tags=['parents']
+    ),
+    mark_notification_read=extend_schema(
+        summary="Mark Notification as Read",
+        description="Mark a specific notification as read for the parent",
+        tags=['parents']
+    ),
+    unread_notifications_count=extend_schema(
+        summary="Get Unread Notifications Count",
+        description="Get the count of unread notifications for the parent",
+        tags=['parents']
+    ),
+    test_notification=extend_schema(
+        summary="Test Notification System",
+        description="Send a test notification to all parents in the school (for development/testing)",
+        tags=['parents']
+    )
+)
 class ParentDashboardViewSet(viewsets.ViewSet):
     """
     ViewSet for parent dashboard functionality
@@ -146,8 +206,34 @@ class ParentDashboardViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['get'])
     def notifications(self, request):
         """Get parent's notifications"""
-        # This will be implemented in Phase 6
-        return Response({'message': 'Notifications endpoint - to be implemented'})
+        try:
+            # Get notifications for the parent's school
+            from apps.notifications.models import Notification, NotificationDelivery
+            
+            # Get notifications that target this parent or are general school notifications
+            parent_notifications = Notification.objects.filter(
+                Q(school=request.user.school) &
+                (Q(target_users=request.user) | Q(target_users__isnull=True))
+            ).distinct().order_by('-created_at')
+            
+            # Apply pagination manually since this is a ViewSet, not ModelViewSet
+            paginator = self.pagination_class()
+            page = paginator.paginate_queryset(parent_notifications, request)
+            if page is not None:
+                from apps.notifications.serializers import NotificationSerializer
+                serializer = NotificationSerializer(page, many=True)
+                return paginator.get_paginated_response(serializer.data)
+            
+            # If no pagination, return all
+            from apps.notifications.serializers import NotificationSerializer
+            serializer = NotificationSerializer(parent_notifications, many=True)
+            return Response(serializer.data)
+            
+        except Exception as e:
+            return Response(
+                {'error': f'Error retrieving notifications: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
     
     @action(detail=False, methods=['put'])
     def notification_preferences(self, request):
@@ -172,3 +258,105 @@ class ParentDashboardViewSet(viewsets.ViewSet):
                 'receive_push': user.receive_push
             }
         })
+    
+    @action(detail=True, methods=['post'])
+    def mark_notification_read(self, request, pk=None):
+        """Mark a notification as read for the parent"""
+        try:
+            from apps.notifications.models import Notification, NotificationDelivery
+            
+            notification = Notification.objects.get(
+                id=pk,
+                school=request.user.school
+            )
+            
+            # Create or update delivery record
+            delivery, created = NotificationDelivery.objects.get_or_create(
+                notification=notification,
+                user=request.user
+            )
+            
+            # Mark as read
+            delivery.read_at = timezone.now()
+            delivery.save()
+            
+            return Response({
+                'message': 'Notification marked as read',
+                'notification_id': str(notification.id)
+            })
+            
+        except Notification.DoesNotExist:
+            return Response(
+                {'error': 'Notification not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {'error': f'Error marking notification as read: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    @action(detail=False, methods=['get'])
+    def unread_notifications_count(self, request):
+        """Get count of unread notifications for the parent"""
+        try:
+            from apps.notifications.models import Notification, NotificationDelivery
+            from django.utils import timezone
+            
+            # Count unread notifications
+            unread_count = NotificationDelivery.objects.filter(
+                user=request.user,
+                read_at__isnull=True
+            ).count()
+            
+            return Response({
+                'unread_count': unread_count
+            })
+            
+        except Exception as e:
+            return Response(
+                {'error': f'Error counting unread notifications: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    @action(detail=False, methods=['post'])
+    def test_notification(self, request):
+        """Test notification system (for development/testing)"""
+        try:
+            from apps.notifications.tasks import send_bulk_notification_task
+            
+            # Get all parents in the same school
+            from apps.authentication.models import User
+            school_parents = User.objects.filter(
+                school=request.user.school,
+                user_type='parent'
+            )
+            
+            if not school_parents.exists():
+                return Response(
+                    {'error': 'No parents found in this school'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Queue a test notification
+            task_result = send_bulk_notification_task.delay(
+                user_ids=[str(parent.id) for parent in school_parents],
+                title="Test Notification from Parent Dashboard",
+                body="This is a test notification to verify the Celery system is working",
+                notification_type="general",
+                school_id=str(request.user.school.id),
+                data={'test_source': 'parent_dashboard', 'timestamp': timezone.now().isoformat()}
+            )
+            
+            return Response({
+                'message': 'Test notification queued successfully',
+                'task_id': task_result.id,
+                'target_parents': school_parents.count(),
+                'status': 'queued'
+            })
+            
+        except Exception as e:
+            return Response(
+                {'error': f'Error sending test notification: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
