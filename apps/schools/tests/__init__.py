@@ -1,0 +1,3 @@
+# Schools tests package
+
+
