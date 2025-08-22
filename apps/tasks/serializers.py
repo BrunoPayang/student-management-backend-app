@@ -8,9 +8,9 @@ class TaskResultSerializer(serializers.ModelSerializer):
     class Meta:
         model = TaskResult
         fields = [
-            'task_id', 'task_name', 'task_args', 'task_kwargs', 
-            'status', 'content_type', 'content_encoding', 'result',
-            'date_done', 'traceback', 'hidden', 'meta'
+            'id', 'task_id', 'periodic_task_name', 'task_name', 'task_args', 
+            'task_kwargs', 'status', 'worker', 'content_type', 'content_encoding', 
+            'result', 'date_created', 'date_started', 'date_done', 'traceback', 'meta'
         ]
         read_only_fields = fields  # All fields are read-only for task results
 
