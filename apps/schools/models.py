@@ -123,6 +123,10 @@ class School(models.Model):
     def get_staff_count(self):
         """Return active staff count"""
         return self.users.filter(user_type='school_staff', is_active=True).count()
+    
+    def get_parent_count(self):
+        """Return active parent count"""
+        return self.users.filter(user_type='parent', is_active=True).count()
 
 
 class SchoolConfiguration(models.Model):

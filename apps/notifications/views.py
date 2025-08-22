@@ -6,6 +6,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiExample
 from rest_framework import serializers
+from rest_framework.filters import SearchFilter
 
 from .models import Notification, NotificationDelivery
 from .serializers import NotificationSerializer, NotificationCreateSerializer, NotificationUpdateSerializer, NotificationDeliverySerializer
@@ -55,8 +56,9 @@ class NotificationViewSet(viewsets.ModelViewSet):
     """ViewSet for notification management with FCM and email support"""
     queryset = Notification.objects.all()
     pagination_class = StandardResultsSetPagination
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = ['notification_type', 'sent_via_fcm', 'created_at']
+    search_fields = ['title', 'body']
 
     def get_queryset(self):
         """Filter by school and permissions"""
@@ -67,10 +69,17 @@ class NotificationViewSet(viewsets.ModelViewSet):
         elif user.is_school_staff():
             return Notification.objects.filter(school=user.school)
         elif user.is_parent():
-            return Notification.objects.filter(
-                target_users=user,
-                school__students__parents__parent=user
-            ).distinct()
+            # Parents can see notifications in their school
+            if hasattr(user, 'school') and user.school:
+                return Notification.objects.filter(school=user.school)
+            else:
+                # If parent doesn't have school set, try to get it from student relationships
+                from apps.students.models import ParentStudent
+                parent_students = ParentStudent.objects.filter(parent=user)
+                if parent_students.exists():
+                    school_ids = parent_students.values_list('student__school_id', flat=True).distinct()
+                    return Notification.objects.filter(school_id__in=school_ids)
+                return Notification.objects.none()
         else:
             return Notification.objects.none()
 
@@ -93,9 +102,11 @@ class NotificationViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         """Create notification with proper school assignment"""
-        # Check if user has a school
-        if not hasattr(self.request.user, 'school') or not self.request.user.school:
-            raise serializers.ValidationError("User must be associated with a school to create notifications")
+        # Admin users can create notifications without a school assigned
+        # School staff and parents must have a school assigned
+        if not self.request.user.is_system_admin():
+            if not hasattr(self.request.user, 'school') or not self.request.user.school:
+                raise serializers.ValidationError("User must be associated with a school to create notifications")
         
         # The serializer will handle the rest
         return serializer.save()
@@ -156,6 +167,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
             body = request.data.get('body')
             notification_type = request.data.get('notification_type', 'general')
             user_ids = request.data.get('user_ids', [])
+            school_id = request.data.get('school')
 
             if not title or not body:
                 return Response(
@@ -163,19 +175,47 @@ class NotificationViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
+            # Determine the school for the notification
+            if request.user.is_system_admin():
+                # Admin users must specify a school for bulk notifications
+                if not school_id:
+                    return Response(
+                        {'error': 'School ID is required for admin users'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                school = request.user.school if hasattr(request.user, 'school') and request.user.school else None
+                if not school:
+                    # Try to get school from the request data
+                    from apps.schools.models import School
+                    try:
+                        school = School.objects.get(id=school_id)
+                    except School.DoesNotExist:
+                        return Response(
+                            {'error': 'Invalid school ID'},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+            else:
+                # Non-admin users must have a school assigned
+                if not hasattr(request.user, 'school') or not request.user.school:
+                    return Response(
+                        {'error': 'User must be associated with a school to send bulk notifications'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                school = request.user.school
+
             # Get target users
             if user_ids:
                 from apps.authentication.models import User
-                users = User.objects.filter(id__in=user_ids, school=request.user.school)
+                users = User.objects.filter(id__in=user_ids, school=school)
             else:
                 from apps.authentication.models import User
                 # Get all users in the school, including parents of students
-                users = User.objects.filter(school=request.user.school)
+                users = User.objects.filter(school=school)
                 
                 # Also include parents who have students in this school but don't have school set
                 from apps.students.models import ParentStudent
                 parent_students = ParentStudent.objects.filter(
-                    student__school=request.user.school
+                    student__school=school
                 ).values_list('parent_id', flat=True).distinct()
                 
                 # Add parents who aren't already in the users queryset
@@ -195,7 +235,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
                 title=title,
                 body=body,
                 notification_type=notification_type,
-                school=request.user.school,
+                school=school,
                 data=request.data.get('data', {})
             )
 
@@ -269,10 +309,23 @@ class NotificationDeliveryViewSet(viewsets.ReadOnlyModelViewSet):
     """ViewSet for notification delivery tracking"""
     queryset = NotificationDelivery.objects.all()
     serializer_class = NotificationDeliverySerializer
-    permission_classes = [IsAuthenticated, IsSchoolStaff]
+    permission_classes = [IsAuthenticated]  # Allow any authenticated user
 
     def get_queryset(self):
-        """Filter by school"""
-        return NotificationDelivery.objects.filter(
-            notification__school=self.request.user.school
-        )
+        """Filter by school and permissions"""
+        user = self.request.user
+        
+        if user.is_system_admin():
+            # Admin users can see all delivery records
+            return NotificationDelivery.objects.all()
+        elif user.is_school_staff():
+            # School staff can see deliveries for their school
+            if hasattr(user, 'school') and user.school:
+                return NotificationDelivery.objects.filter(
+                    notification__school=user.school
+                )
+            else:
+                return NotificationDelivery.objects.none()
+        else:
+            # Parents can only see their own delivery records
+            return NotificationDelivery.objects.filter(user=user)

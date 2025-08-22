@@ -9,5 +9,5 @@ router.register(r'notifications', views.NotificationViewSet, basename='notificat
 router.register(r'notification-deliveries', views.NotificationDeliveryViewSet, basename='notification-delivery')
 
 urlpatterns = [
-    path('api/', include(router.urls)),
+    path('', include(router.urls)),
 ] 

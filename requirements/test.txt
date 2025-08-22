@@ -1,0 +1,22 @@
+# Test Dependencies for Phase 7
+# Core Testing Framework
+pytest>=7.0.0
+pytest-django>=4.5.0
+pytest-cov>=4.0.0
+
+# Test Data Generation
+factory-boy>=3.2.0
+
+# Coverage Reporting
+coverage>=7.0.0
+
+# Performance and Debugging
+django-debug-toolbar>=4.0.0
+django-silk>=5.0.0
+
+# Additional Testing Utilities
+pytest-mock>=3.10.0
+pytest-xdist>=3.0.0  # For parallel test execution
+pytest-html>=3.1.0   # For HTML test reports
+
+

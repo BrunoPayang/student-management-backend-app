@@ -1,7 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q
@@ -11,7 +11,7 @@ from rest_framework import serializers
 from .models import FileUpload
 from .serializers import FileUploadSerializer, FileUploadCreateSerializer
 from .services import FirebaseStorageService
-from apps.authentication.permissions import IsSchoolStaff, IsParent
+from apps.authentication.permissions import IsSchoolStaff, IsParent, IsSchoolStaffOrSystemAdmin
 from apps.common.pagination import StandardResultsSetPagination
 
 @extend_schema_view(
@@ -67,10 +67,11 @@ from apps.common.pagination import StandardResultsSetPagination
 class FileUploadViewSet(viewsets.ModelViewSet):
     """ViewSet for file upload management with local storage and Firebase support"""
     queryset = FileUpload.objects.all()
-    parser_classes = (MultiPartParser, FormParser)
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
     pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['file_type', 'is_public', 'uploaded_by']
+    search_fields = ['original_name', 'description', 'tags']
 
     def get_queryset(self):
         """Filter by school and permissions"""
@@ -102,7 +103,7 @@ class FileUploadViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         """Set permissions based on action"""
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            permission_classes = [IsAuthenticated]  # Allow any authenticated user for testing
+            permission_classes = [IsSchoolStaffOrSystemAdmin]  # Only staff and admins can manage files
         else:
             permission_classes = [IsAuthenticated]
 
@@ -143,8 +144,11 @@ class FileUploadViewSet(viewsets.ModelViewSet):
             uploaded_by=self.request.user
         )
         
-        # Update the serializer instance
+        # Update the serializer instance to use the full serializer for response
         serializer.instance = file_upload
+        # Use the full serializer for the response
+        response_serializer = FileUploadSerializer(file_upload)
+        serializer._data = response_serializer.data
 
     @extend_schema(
         summary="Upload File",

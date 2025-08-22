@@ -125,7 +125,7 @@ class TranscriptSerializer(serializers.ModelSerializer):
         model = Transcript
         fields = [
             'id', 'student', 'student_name', 'academic_year', 'semester',
-            'file_url', 'file_name', 'file_size_mb', 'gpa', 'total_credits',
+            'file_url', 'file_name', 'file_size', 'file_size_mb', 'gpa', 'total_credits',
             'rank_in_class', 'class_size', 'uploaded_by', 'uploaded_by_name',
             'is_public', 'created_at'
         ]
@@ -146,7 +146,7 @@ class BehaviorReportSerializer(serializers.ModelSerializer):
             'follow_up_date', 'reported_by', 'reported_by_name',
             'notify_parents', 'is_public', 'created_at'
         ]
-        read_only_fields = ['id', 'created_at']
+        read_only_fields = ['id', 'reported_by', 'created_at']
 
 
 class PaymentRecordSerializer(serializers.ModelSerializer):
