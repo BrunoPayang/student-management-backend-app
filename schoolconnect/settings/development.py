@@ -7,7 +7,15 @@ from .base import *
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
+# Allow ngrok domains for development
+ALLOWED_HOSTS = [
+    'localhost', 
+    '127.0.0.1', 
+    '0.0.0.0',
+    'b461159c6436.ngrok-free.app',
+    '.ngrok-free.app',  # Allow all ngrok-free.app subdomains
+    '.ngrok.io',        # Allow all ngrok.io subdomains
+]
 
 # Database configuration for development
 # Use SQLite for local development, PostgreSQL for production
