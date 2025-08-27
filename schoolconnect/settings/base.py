@@ -265,7 +265,9 @@ SPECTACULAR_SETTINGS = {
 # CORS settings
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
-    "http://127.0.0.1:3000",
+    "http://172.16.20.34:3000",
+    "https://9692fdb59163.ngrok-free.app",
+    "https://2f0185b22841.ngrok-free.app",  # Add this line
 ]
 
 CORS_ALLOW_CREDENTIALS = True
