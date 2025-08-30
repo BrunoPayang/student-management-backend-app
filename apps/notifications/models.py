@@ -33,6 +33,64 @@ class Notification(models.Model):
     class Meta:
         db_table = 'notifications_notification'
         ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.title} - {self.school.name}"
+    
+    @property
+    def target_users_count(self):
+        """Return count of target users"""
+        return self.target_users.count()
+    
+    def get_target_users_info(self):
+        """Get detailed information about target users"""
+        users = self.target_users.all()
+        return {
+            'total_count': users.count(),
+            'by_type': {
+                'parent': users.filter(user_type='parent').count(),
+                'school_staff': users.filter(user_type='school_staff').count(),
+                'admin': users.filter(user_type='admin').count(),
+            },
+            'by_school': {
+                'direct_school': users.filter(school=self.school).count(),
+                'other_schools': users.exclude(school=self.school).count(),
+                'no_school': users.filter(school__isnull=True).count(),
+            }
+        }
+    
+    def auto_target_all_parents(self):
+        """Automatically target all parents in the school"""
+        try:
+            from apps.students.models import ParentStudent
+            
+            # Get direct school parents
+            direct_parents = User.objects.filter(
+                user_type='parent',
+                school=self.school
+            )
+            
+            # Get parents who have students in this school but don't have school set
+            parent_students = ParentStudent.objects.filter(
+                student__school=self.school
+            ).values_list('parent_id', flat=True).distinct()
+            
+            additional_parents = User.objects.filter(
+                id__in=parent_students,
+                school__isnull=True
+            )
+            
+            # Combine the querysets
+            from django.db.models import Q
+            all_parents = direct_parents | additional_parents
+            
+            # Set target users
+            self.target_users.set(all_parents)
+            return all_parents.count()
+            
+        except Exception as e:
+            print(f"Error auto-targeting parents: {e}")
+            return 0
 
 class NotificationDelivery(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

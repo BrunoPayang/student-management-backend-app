@@ -21,6 +21,31 @@ class DynamicSchoolField(serializers.PrimaryKeyRelatedField):
         # Default fallback
         from apps.schools.models import School
         return School.objects.all()
+    
+    def to_internal_value(self, data):
+        """Handle both UUID strings and UUID objects"""
+        try:
+            # If it's already a UUID object, return it
+            if hasattr(data, 'uuid'):
+                return data
+            
+            # If it's a string, try to convert to UUID
+            if isinstance(data, str):
+                import uuid
+                uuid_obj = uuid.UUID(data)
+                # Get the actual School object
+                from apps.schools.models import School
+                return School.objects.get(id=uuid_obj)
+            
+            # If it's already a School object, return it
+            if hasattr(data, 'id') and hasattr(data, 'name'):
+                return data
+                
+            # Default behavior
+            return super().to_internal_value(data)
+            
+        except (ValueError, TypeError, School.DoesNotExist) as e:
+            raise serializers.ValidationError(f"Invalid school ID: {data}. Error: {str(e)}")
 
 
 class NotificationSerializer(serializers.ModelSerializer):
@@ -52,23 +77,39 @@ class NotificationSerializer(serializers.ModelSerializer):
 
 class NotificationCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating notifications - WRITE ONLY"""
-    target_user_ids = serializers.ListField(
-        child=serializers.IntegerField(),
-        required=False, 
-        allow_empty=True,
-        help_text="List of user IDs to target (optional)"
-    )
+    school_name = serializers.CharField(source='school.name', read_only=True)
+    target_user_ids = serializers.SerializerMethodField()
     school = DynamicSchoolField(
-        required=True,  # Changed from False to True - school is always required
-        help_text="School ID (required for all users)"
+        required=False,  # Make it optional since we can get it from user context
+        help_text="School ID (optional - will use user's school if not provided)"
     )
+    
+    def to_internal_value(self, data):
+        """Handle target_user_ids input"""
+        internal_value = super().to_internal_value(data)
+        # Store target_user_ids for later use in create method
+        if 'target_user_ids' in data:
+            self._target_user_ids_input = data['target_user_ids']
+        else:
+            self._target_user_ids_input = []
+        return internal_value
     
     class Meta:
         model = Notification
         fields = [
-            'title', 'body', 'notification_type', 'target_user_ids', 'school', 'data'
+            'id', 'title', 'body', 'notification_type', 'target_user_ids', 'school', 'school_name', 'data',
+            'sent_via_fcm', 'sent_via_email', 'sent_via_sms', 'created_at', 'sent_at'
         ]
-        # No read_only_fields needed for create serializer
+        read_only_fields = ['id', 'school_name', 'sent_via_fcm', 'sent_via_email', 'sent_via_sms', 'created_at', 'sent_at']
+    
+    def get_target_user_ids(self, obj):
+        """Return list of target user IDs safely"""
+        try:
+            if obj and hasattr(obj, 'target_users'):
+                return list(obj.target_users.values_list('id', flat=True))
+            return []
+        except Exception:
+            return []
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -106,9 +147,9 @@ class NotificationCreateSerializer(serializers.ModelSerializer):
         return value
     
     def create(self, validated_data):
-        """Create notification with proper school assignment"""
-        # Extract target_user_ids before creating the notification
-        target_user_ids = validated_data.pop('target_user_ids', [])
+        """Create notification with proper school assignment and target users"""
+        # Extract target_user_ids from the stored input
+        target_user_ids = getattr(self, '_target_user_ids_input', [])
         
         # Get school from validated data or user context
         user = self.context['request'].user
@@ -126,25 +167,77 @@ class NotificationCreateSerializer(serializers.ModelSerializer):
         # Create notification
         notification = Notification.objects.create(**validated_data)
         
-        # Handle target users if specified
-        if target_user_ids:
+        # Handle target users
+        if target_user_ids and len(target_user_ids) > 0:
+            # If specific users are specified, use them
             try:
                 from apps.authentication.models import User
+                
+                # First try to find users directly in the specified school
                 users = User.objects.filter(id__in=target_user_ids, school=school)
-                notification.target_users.set(users)
+                
+                # If no users found directly in school, check for parents who have students in this school
+                if not users.exists():
+                    from apps.students.models import ParentStudent
+                    parent_students = ParentStudent.objects.filter(
+                        student__school=school,
+                        parent_id__in=target_user_ids
+                    ).values_list('parent_id', flat=True).distinct()
+                    
+                    if parent_students.exists():
+                        additional_users = User.objects.filter(id__in=parent_students)
+                        users = additional_users
+                
+                # If still no users found and user is admin, try to find them anywhere
+                if not users.exists() and user.is_system_admin():
+                    users = User.objects.filter(id__in=target_user_ids)
+                
+                if users.exists():
+                    notification.target_users.set(users)
+                    print(f"Notification created with {users.count()} specific target users")
+                else:
+                    print(f"Warning: No users found with IDs {target_user_ids} in school {school.name} or with students in school")
+                    
             except Exception as e:
-                # Log the error but don't fail the creation
                 print(f"Warning: Could not set target users: {e}")
+        else:
+            # If no specific users, automatically target all parents in the school
+            try:
+                from apps.authentication.models import User
+                from apps.students.models import ParentStudent
+                
+                # Get direct school parents
+                direct_parents = User.objects.filter(
+                    user_type='parent',
+                    school=school
+                )
+                
+                # Get parents who have students in this school but don't have school set
+                parent_students = ParentStudent.objects.filter(
+                    student__school=school
+                ).values_list('parent_id', flat=True).distinct()
+                
+                additional_parents = User.objects.filter(
+                    id__in=parent_students,
+                    school__isnull=True
+                )
+                
+                # Combine the querysets
+                from django.db.models import Q
+                all_parents = direct_parents | additional_parents
+                
+                # Set target users
+                notification.target_users.set(all_parents)
+                print(f"Notification created with {all_parents.count()} total target parents (auto-targeted)")
+                
+            except Exception as e:
+                print(f"Warning: Could not auto-target parents: {e}")
         
         return notification
 
 class NotificationUpdateSerializer(serializers.ModelSerializer):
     """Serializer for updating notifications"""
-    target_user_ids = serializers.ListField(
-        child=serializers.IntegerField(),
-        required=False, 
-        allow_empty=True
-    )
+    target_user_ids = serializers.SerializerMethodField()
     school = DynamicSchoolField(
         required=False,
         help_text="School ID (admin users can change, school users cannot)"
@@ -155,6 +248,25 @@ class NotificationUpdateSerializer(serializers.ModelSerializer):
         fields = [
             'title', 'body', 'notification_type', 'target_user_ids', 'school', 'data'
         ]
+    
+    def to_internal_value(self, data):
+        """Handle target_user_ids input"""
+        internal_value = super().to_internal_value(data)
+        # Store target_user_ids for later use in update method
+        if 'target_user_ids' in data:
+            self._target_user_ids_input = data['target_user_ids']
+        else:
+            self._target_user_ids_input = None
+        return internal_value
+    
+    def get_target_user_ids(self, obj):
+        """Return list of target user IDs safely"""
+        try:
+            if obj and hasattr(obj, 'target_users'):
+                return list(obj.target_users.values_list('id', flat=True))
+            return []
+        except Exception:
+            return []
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -177,7 +289,7 @@ class NotificationUpdateSerializer(serializers.ModelSerializer):
     
     def update(self, instance, validated_data):
         """Update notification"""
-        target_user_ids = validated_data.pop('target_user_ids', None)
+        target_user_ids = getattr(self, '_target_user_ids_input', None)
         
         # Update other fields
         for attr, value in validated_data.items():
