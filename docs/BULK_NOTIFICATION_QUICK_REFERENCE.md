@@ -57,7 +57,7 @@ Content-Type: application/json
 
 ### Simple Announcement
 ```bash
-curl -X POST "http://localhost:8000/api/notifications/send_bulk/" \
+curl -X POST "http://127.0.0.1:8000/api/notifications/send_bulk/" \
   -H "Authorization: Bearer your_token" \
   -H "Content-Type: application/json" \
   -d '{
@@ -69,7 +69,7 @@ curl -X POST "http://localhost:8000/api/notifications/send_bulk/" \
 
 ### Payment Reminder
 ```bash
-curl -X POST "http://localhost:8000/api/notifications/send_bulk/" \
+curl -X POST "http://127.0.0.1:8000/api/notifications/send_bulk/" \
   -H "Authorization: Bearer your_token" \
   -H "Content-Type: application/json" \
   -d '{
@@ -85,7 +85,7 @@ curl -X POST "http://localhost:8000/api/notifications/send_bulk/" \
 
 ### Admin to Specific School
 ```bash
-curl -X POST "http://localhost:8000/api/notifications/send_bulk/" \
+curl -X POST "http://127.0.0.1:8000/api/notifications/send_bulk/" \
   -H "Authorization: Bearer admin_token" \
   -H "Content-Type: application/json" \
   -d '{

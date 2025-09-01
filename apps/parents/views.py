@@ -168,24 +168,9 @@ class ParentDashboardViewSet(viewsets.ViewSet):
     
     @action(detail=False, methods=['get'])
     def my_children(self, request):
-        """Get all children of the parent or all students in the parent's school"""
-        # Get the parent's school
-        parent_school = request.user.school
-        if not parent_school:
-            # If user.school is not set, get it from their student relationships
-            from apps.students.models import ParentStudent
-            parent_student = ParentStudent.objects.filter(parent=request.user).first()
-            if parent_student:
-                parent_school = parent_student.student.school
-        
-        if not parent_school:
-            return Response(
-                {'error': 'Parent is not associated with any school'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Get all students in the parent's school
-        students = Student.objects.filter(school=parent_school)
+        """Get all children linked to this specific parent"""
+        # Get only students that are linked to this specific parent
+        students = Student.objects.filter(parents__parent=request.user)
         
         # Apply search if provided
         search_query = request.query_params.get('search', '')

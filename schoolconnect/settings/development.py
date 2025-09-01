@@ -15,6 +15,7 @@ ALLOWED_HOSTS = [
     'b461159c6436.ngrok-free.app',
     '.ngrok-free.app',  # Allow all ngrok-free.app subdomains
     '.ngrok.io',        # Allow all ngrok.io subdomains
+    '10.0.2.2'
 ]
 
 # Database configuration for development
