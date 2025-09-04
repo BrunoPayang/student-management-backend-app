@@ -21,9 +21,9 @@ class TestSchoolsAPI:
     
     def test_list_schools_authorized(self, api_client, create_user, create_school):
         """Test listing schools with authentication"""
-        # Create admin user and authenticate
-        admin_user = create_user(user_type='admin')
-        api_client.force_authenticate(user=admin_user)
+        # Create superuser and authenticate
+        superuser = create_user(is_superuser=True)
+        api_client.force_authenticate(user=superuser)
         
         # Create a school
         school = create_school()
@@ -35,11 +35,11 @@ class TestSchoolsAPI:
         assert len(response.data['results']) == 1
         assert response.data['results'][0]['name'] == school.name
     
-    def test_create_school_admin_success(self, api_client, create_user):
-        """Test school creation by admin user"""
-        # Create admin user and authenticate
-        admin_user = create_user(user_type='admin')
-        api_client.force_authenticate(user=admin_user)
+    def test_create_school_superuser_success(self, api_client, create_user):
+        """Test school creation by superuser"""
+        # Create superuser and authenticate
+        superuser = create_user(is_superuser=True)
+        api_client.force_authenticate(user=superuser)
         
         url = reverse('school-list')  # Fixed: removed namespace
         data = {
@@ -58,8 +58,8 @@ class TestSchoolsAPI:
         assert response.status_code == status.HTTP_201_CREATED
         assert response.data['name'] == 'New Test School'
     
-    def test_create_school_non_admin_forbidden(self, api_client, create_user):
-        """Test school creation by non-admin user"""
+    def test_create_school_non_superuser_forbidden(self, api_client, create_user):
+        """Test school creation by non-superuser"""
         # Create parent user and authenticate
         parent_user = create_user(user_type='parent')
         api_client.force_authenticate(user=parent_user)
@@ -71,14 +71,14 @@ class TestSchoolsAPI:
         }
         
         response = api_client.post(url, data, format='json')
-        # The API returns 400 for validation errors, not 403 for permissions
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        # The API returns 403 for permission denied
+        assert response.status_code == status.HTTP_403_FORBIDDEN
     
     def test_retrieve_school_success(self, api_client, create_user, create_school):
         """Test retrieving a specific school"""
-        # Create admin user and authenticate
-        admin_user = create_user(user_type='admin')
-        api_client.force_authenticate(user=admin_user)
+        # Create superuser and authenticate
+        superuser = create_user(is_superuser=True)
+        api_client.force_authenticate(user=superuser)
         
         # Create a school
         school = create_school()
@@ -89,22 +89,50 @@ class TestSchoolsAPI:
         assert response.status_code == status.HTTP_200_OK
         assert response.data['name'] == school.name
     
+    def test_school_staff_update_own_school(self, api_client, create_user, create_school):
+        """Test school staff can update their own school"""
+        # Create school and staff user
+        school = create_school()
+        staff_user = create_user(user_type='school_staff', school=school)
+        api_client.force_authenticate(user=staff_user)
+        
+        url = reverse('school-detail', kwargs={'pk': school.pk})
+        data = {'name': 'Updated by Staff'}
+        
+        response = api_client.patch(url, data, format='json')
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['name'] == 'Updated by Staff'
+    
+    def test_school_staff_cannot_update_other_school(self, api_client, create_user, create_school):
+        """Test school staff cannot update other schools"""
+        # Create two schools and staff user in one school
+        school1 = create_school(name='School 1')
+        school2 = create_school(name='School 2')
+        staff_user = create_user(user_type='school_staff', school=school1)
+        api_client.force_authenticate(user=staff_user)
+        
+        url = reverse('school-detail', kwargs={'pk': school2.pk})
+        data = {'name': 'Unauthorized Update'}
+        
+        response = api_client.patch(url, data, format='json')
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+    
     def test_retrieve_school_not_found(self, api_client, create_user):
         """Test retrieving a non-existent school"""
-        # Create admin user and authenticate
-        admin_user = create_user(user_type='admin')
-        api_client.force_authenticate(user=admin_user)
+        # Create superuser and authenticate
+        superuser = create_user(is_superuser=True)
+        api_client.force_authenticate(user=superuser)
         
         url = reverse('school-detail', kwargs={'pk': '99999999-9999-9999-9999-999999999999'})  # Fixed: removed namespace
         response = api_client.get(url)
         
         assert response.status_code == status.HTTP_404_NOT_FOUND
     
-    def test_update_school_admin_success(self, api_client, create_user, create_school):
-        """Test school update by admin user"""
-        # Create admin user and authenticate
-        admin_user = create_user(user_type='admin')
-        api_client.force_authenticate(user=admin_user)
+    def test_update_school_superuser_success(self, api_client, create_user, create_school):
+        """Test school update by superuser"""
+        # Create superuser and authenticate
+        superuser = create_user(is_superuser=True)
+        api_client.force_authenticate(user=superuser)
         
         # Create a school
         school = create_school()
@@ -116,8 +144,8 @@ class TestSchoolsAPI:
         assert response.status_code == status.HTTP_200_OK
         assert response.data['name'] == 'Updated School Name'
     
-    def test_update_school_non_admin_forbidden(self, api_client, create_user, create_school):
-        """Test school update by non-admin user"""
+    def test_update_school_non_authorized_forbidden(self, api_client, create_user, create_school):
+        """Test school update by non-authorized user"""
         # Create parent user and authenticate
         parent_user = create_user(user_type='parent')
         api_client.force_authenticate(user=parent_user)
@@ -129,14 +157,14 @@ class TestSchoolsAPI:
         data = {'name': 'Unauthorized Update'}
         
         response = api_client.patch(url, data, format='json')
-        # The API returns 404 for non-admin users trying to access schools
+        # The API returns 404 for non-authorized users trying to access schools
         assert response.status_code == status.HTTP_404_NOT_FOUND
     
-    def test_delete_school_admin_success(self, api_client, create_user, create_school):
-        """Test school deletion by admin user"""
-        # Create admin user and authenticate
-        admin_user = create_user(user_type='admin')
-        api_client.force_authenticate(user=admin_user)
+    def test_delete_school_superuser_success(self, api_client, create_user, create_school):
+        """Test school deletion by superuser"""
+        # Create superuser and authenticate
+        superuser = create_user(is_superuser=True)
+        api_client.force_authenticate(user=superuser)
         
         # Create a school
         school = create_school()
@@ -146,8 +174,8 @@ class TestSchoolsAPI:
         
         assert response.status_code == status.HTTP_204_NO_CONTENT
     
-    def test_delete_school_non_admin_forbidden(self, api_client, create_user, create_school):
-        """Test school deletion by non-admin user"""
+    def test_delete_school_non_authorized_forbidden(self, api_client, create_user, create_school):
+        """Test school deletion by non-authorized user"""
         # Create parent user and authenticate
         parent_user = create_user(user_type='parent')
         api_client.force_authenticate(user=parent_user)
@@ -158,14 +186,14 @@ class TestSchoolsAPI:
         url = reverse('school-detail', kwargs={'pk': school.pk})  # Fixed: removed namespace
         response = api_client.delete(url)
         
-        # The API returns 404 for non-admin users trying to access schools
+        # The API returns 404 for non-authorized users trying to access schools
         assert response.status_code == status.HTTP_404_NOT_FOUND
     
     def test_school_search(self, api_client, create_user, create_school):
         """Test school search functionality"""
-        # Create admin user and authenticate
-        admin_user = create_user(user_type='admin')
-        api_client.force_authenticate(user=admin_user)
+        # Create superuser and authenticate
+        superuser = create_user(is_superuser=True)
+        api_client.force_authenticate(user=superuser)
         
         # Create schools with different names
         create_school(name='Alpha School')
@@ -181,9 +209,9 @@ class TestSchoolsAPI:
     
     def test_school_filtering(self, api_client, create_user, create_school):
         """Test school filtering functionality"""
-        # Create admin user and authenticate
-        admin_user = create_user(user_type='admin')
-        api_client.force_authenticate(user=admin_user)
+        # Create superuser and authenticate
+        superuser = create_user(is_superuser=True)
+        api_client.force_authenticate(user=superuser)
         
         # Create schools with different types
         create_school(school_type='primary')
@@ -261,9 +289,9 @@ class TestSchoolsValidation:
     
     def test_create_school_missing_required_fields(self, api_client, create_user):
         """Test school creation with missing required fields"""
-        # Create admin user and authenticate
-        admin_user = create_user(user_type='admin')
-        api_client.force_authenticate(user=admin_user)
+        # Create superuser and authenticate
+        superuser = create_user(is_superuser=True)
+        api_client.force_authenticate(user=superuser)
         
         url = reverse('school-list')  # Fixed: removed namespace
         data = {
@@ -277,9 +305,9 @@ class TestSchoolsValidation:
     
     def test_create_school_invalid_data(self, api_client, create_user):
         """Test school creation with invalid data"""
-        # Create admin user and authenticate
-        admin_user = create_user(user_type='admin')
-        api_client.force_authenticate(user=admin_user)
+        # Create superuser and authenticate
+        superuser = create_user(is_superuser=True)
+        api_client.force_authenticate(user=superuser)
         
         url = reverse('school-list')  # Fixed: removed namespace
         data = {

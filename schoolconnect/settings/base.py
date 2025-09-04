@@ -163,6 +163,26 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': '''
     # SchoolConnect API - Gestion des écoles au Niger
     
+    ## 🏫 School Management & Configuration
+    
+    ### 🎯 School Configuration API
+    - **Comprehensive Settings**: Academic, notification, payment, and file upload settings
+    - **Multi-tenant Architecture**: Each school has isolated data and configuration
+    - **Permission System**: Super admins and school staff can manage their school's configuration
+    - **Real-time Updates**: Configuration changes apply immediately
+    
+    ### 🔐 Advanced Permission System
+    - **Super Admins**: Full access to all schools and configurations
+    - **School Staff**: Can only manage their own school and configuration
+    - **Granular Control**: Separate permissions for read, write, and administrative operations
+    - **Security First**: Object-level permissions ensure data isolation
+    
+    ### 📊 School Analytics
+    - **Student Statistics**: Total count, class distribution, gender distribution
+    - **Enrollment Tracking**: Recent enrollments and trends
+    - **Payment Analytics**: Payment status, overdue payments, financial summaries
+    - **Real-time Data**: Live statistics updated automatically
+    
     ## 🚀 Phase 5 Features (Firebase Integration)
     
     ### 📁 File Management

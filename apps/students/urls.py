@@ -13,5 +13,5 @@ router.register(r'behavior-reports', BehaviorReportViewSet, basename='behavior-r
 router.register(r'payment-records', PaymentRecordViewSet, basename='payment-record')
 
 urlpatterns = [
-    path('api/', include(router.urls)),
+    path('', include(router.urls)),
 ] 

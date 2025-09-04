@@ -1,0 +1,6541 @@
+openapi: 3.0.3
+info:
+  title: SchoolConnect API
+  version: 1.0.0
+  description: "\n    # SchoolConnect API - Gestion des écoles au Niger\n    \n  \
+    \  ## \U0001F3EB School Management & Configuration\n    \n    ### \U0001F3AF School\
+    \ Configuration API\n    - **Comprehensive Settings**: Academic, notification,\
+    \ payment, and file upload settings\n    - **Multi-tenant Architecture**: Each\
+    \ school has isolated data and configuration\n    - **Permission System**: Super\
+    \ admins and school staff can manage their school's configuration\n    - **Real-time\
+    \ Updates**: Configuration changes apply immediately\n    \n    ### \U0001F510\
+    \ Advanced Permission System\n    - **Super Admins**: Full access to all schools\
+    \ and configurations\n    - **School Staff**: Can only manage their own school\
+    \ and configuration\n    - **Granular Control**: Separate permissions for read,\
+    \ write, and administrative operations\n    - **Security First**: Object-level\
+    \ permissions ensure data isolation\n    \n    ### \U0001F4CA School Analytics\n\
+    \    - **Student Statistics**: Total count, class distribution, gender distribution\n\
+    \    - **Enrollment Tracking**: Recent enrollments and trends\n    - **Payment\
+    \ Analytics**: Payment status, overdue payments, financial summaries\n    - **Real-time\
+    \ Data**: Live statistics updated automatically\n    \n    ## \U0001F680 Phase\
+    \ 5 Features (Firebase Integration)\n    \n    ### \U0001F4C1 File Management\n\
+    \    - **File Upload**: Upload documents, images, and files\n    - **File Storage**:\
+    \ Local storage (free) or Firebase storage (optional)\n    - **File Types**: PDF,\
+    \ DOC, DOCX, JPG, PNG, GIF, TXT\n    - **File Organization**: School-based folder\
+    \ structure\n    \n    ### \U0001F4F1 Notifications\n    - **Push Notifications**:\
+    \ Firebase Cloud Messaging (FCM)\n    - **Email Notifications**: SMTP-based email\
+    \ delivery\n    - **Multi-channel**: Automatic fallback to local/mock services\n\
+    \    - **Bulk Notifications**: Send to multiple users at once\n    \n    ### \U0001F527\
+    \ Storage Options\n    - **Local Storage**: Free, immediate use (default)\n  \
+    \  - **Firebase Storage**: Cloud-based, scalable (when configured)\n    - **Automatic\
+    \ Fallback**: Seamless switching between storage types\n    \n    ## \U0001F680\
+    \ Phase 6 Features (Background Tasks & Notifications)\n    \n    ### ⚡ Background\
+    \ Processing\n    - **Celery Integration**: Asynchronous task processing\n   \
+    \ - **Redis Broker**: High-performance message queuing\n    - **Task Monitoring**:\
+    \ Real-time task status and worker monitoring\n    \n    ### \U0001F504 Automated\
+    \ Tasks\n    - **Scheduled Notifications**: Every 5 minutes\n    - **File Cleanup**:\
+    \ Daily maintenance\n    - **Monthly Reports**: Automated report generation\n\
+    \    \n    ### \U0001F4CA Task Management\n    - **Task Results**: Track completed\
+    \ tasks\n    - **Worker Status**: Monitor Celery workers\n    - **Active Tasks**:\
+    \ View currently running tasks\n    \n    ### \U0001F468‍\U0001F469‍\U0001F467\
+    ‍\U0001F466 Enhanced Parent Experience\n    - **Real-time Notifications**: Instant\
+    \ updates via background processing\n    - **Notification Preferences**: Customize\
+    \ delivery channels\n    - **Read Status Tracking**: Mark notifications as read\n\
+    \    - **Unread Counts**: Track pending notifications\n    \n    ## \U0001F4DA\
+    \ Available Endpoints\n    \n    ### Authentication\n    - User registration and\
+    \ login\n    - JWT token management\n    - Role-based access control\n    \n \
+    \   ### Core Management\n    - Schools and school configuration\n    - Students\
+    \ and academic records\n    - Parents and family connections\n    - Behavior reports\
+    \ and transcripts\n    \n    ### Phase 5 Features\n    - File upload and management\n\
+    \    - Notification system\n    - Real-time updates\n    \n    ### Phase 6 Features\n\
+    \    - Background task processing\n    - Enhanced notification system\n    - Task\
+    \ monitoring and management\n    "
+  contact:
+    name: SchoolConnect Support
+    email: support@schoolconnect.ne
+  license:
+    name: MIT License
+paths:
+  /api/:
+    get:
+      operationId: root_retrieve
+      description: API Root - Lists all available endpoints
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/auth/change-password/:
+    post:
+      operationId: auth_change_password_create
+      description: Changement du mot de passe de l'utilisateur connecté
+      summary: Changement de mot de passe
+      tags:
+      - authentication
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/auth/current-user/:
+    get:
+      operationId: auth_current_user_retrieve
+      description: Récupération des informations de l'utilisateur connecté
+      summary: Utilisateur actuel
+      tags:
+      - authentication
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/auth/fcm-token/:
+    post:
+      operationId: auth_fcm_token_create
+      description: Mise à jour du token Firebase Cloud Messaging pour les notifications
+        push
+      summary: Mise à jour du token FCM
+      tags:
+      - authentication
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/auth/login/:
+    post:
+      operationId: auth_login_create
+      description: Authentification JWT avec nom d'utilisateur et mot de passe
+      summary: Connexion utilisateur
+      tags:
+      - authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+            examples:
+              ExempleDeConnexion:
+                value:
+                  username: utilisateur
+                  password: motdepasse123
+                summary: Exemple de connexion
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenObtainPair'
+          description: ''
+  /api/auth/logout/:
+    post:
+      operationId: auth_logout_create
+      description: Déconnexion et invalidation du token de rafraîchissement
+      summary: Déconnexion utilisateur
+      tags:
+      - authentication
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/auth/password-reset/:
+    post:
+      operationId: auth_password_reset_create
+      description: Envoi d'un email de réinitialisation de mot de passe
+      summary: Demande de réinitialisation de mot de passe
+      tags:
+      - authentication
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/auth/password-reset-confirm/:
+    post:
+      operationId: auth_password_reset_confirm_create
+      description: Confirmation de la réinitialisation avec token
+      summary: Confirmation de réinitialisation de mot de passe
+      tags:
+      - authentication
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/auth/profile/:
+    get:
+      operationId: auth_profile_retrieve
+      description: Récupération du profil de l'utilisateur connecté
+      summary: Profil utilisateur
+      tags:
+      - authentication
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    put:
+      operationId: auth_profile_update
+      description: Mise à jour des informations du profil utilisateur
+      summary: Mise à jour du profil
+      tags:
+      - authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    patch:
+      operationId: auth_profile_partial_update
+      description: Mise à jour partielle des informations du profil utilisateur
+      summary: Mise à jour partielle du profil
+      tags:
+      - authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/auth/refresh/:
+    post:
+      operationId: auth_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/auth/register/:
+    post:
+      operationId: auth_register_create
+      description: Création d'un nouveau compte utilisateur
+      summary: Inscription utilisateur
+      tags:
+      - authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegistrationRequest'
+            examples:
+              ExempleD'inscriptionParent:
+                value:
+                  username: parent123
+                  email: parent@example.com
+                  password: motdepasse123
+                  password_confirm: motdepasse123
+                  first_name: Jean
+                  last_name: Dupont
+                  user_type: parent
+                  phone: '+22712345678'
+                summary: Exemple d'inscription parent
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserRegistrationRequest'
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/UserRegistrationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRegistration'
+          description: ''
+  /api/auth/user-context/:
+    get:
+      operationId: auth_user_context_retrieve
+      description: Récupération du contexte utilisateur pour le frontend (école, permissions,
+        etc.)
+      summary: Contexte utilisateur
+      tags:
+      - authentication
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/behavior-reports/:
+    get:
+      operationId: behavior_reports_list
+      description: ViewSet for behavior reports
+      parameters:
+      - in: query
+        name: is_public
+        schema:
+          type: boolean
+      - in: query
+        name: notify_parents
+        schema:
+          type: boolean
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: report_type
+        schema:
+          type: string
+          enum:
+          - achievement
+          - discipline
+          - negative
+          - neutral
+          - positive
+        description: |-
+          * `positive` - Positive Behavior
+          * `negative` - Negative Behavior
+          * `neutral` - General Observation
+          * `achievement` - Achievement
+          * `discipline` - Disciplinary Action
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: severity_level
+        schema:
+          type: string
+          enum:
+          - critical
+          - high
+          - low
+          - medium
+        description: |-
+          * `low` - Low
+          * `medium` - Medium
+          * `high` - High
+          * `critical` - Critical
+      tags:
+      - behavior-reports
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBehaviorReportList'
+          description: ''
+    post:
+      operationId: behavior_reports_create
+      description: ViewSet for behavior reports
+      tags:
+      - behavior-reports
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BehaviorReportRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BehaviorReportRequest'
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/BehaviorReportRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BehaviorReport'
+          description: ''
+  /api/behavior-reports/{id}/:
+    get:
+      operationId: behavior_reports_retrieve
+      description: ViewSet for behavior reports
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Behavior Report.
+        required: true
+      tags:
+      - behavior-reports
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BehaviorReport'
+          description: ''
+    put:
+      operationId: behavior_reports_update
+      description: ViewSet for behavior reports
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Behavior Report.
+        required: true
+      tags:
+      - behavior-reports
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BehaviorReportRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BehaviorReportRequest'
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/BehaviorReportRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BehaviorReport'
+          description: ''
+    patch:
+      operationId: behavior_reports_partial_update
+      description: ViewSet for behavior reports
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Behavior Report.
+        required: true
+      tags:
+      - behavior-reports
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBehaviorReportRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBehaviorReportRequest'
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/PatchedBehaviorReportRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BehaviorReport'
+          description: ''
+    delete:
+      operationId: behavior_reports_destroy
+      description: ViewSet for behavior reports
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Behavior Report.
+        required: true
+      tags:
+      - behavior-reports
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/files/:
+    get:
+      operationId: files_list
+      description: Retrieve a list of files with pagination and filtering
+      summary: List Files
+      parameters:
+      - in: query
+        name: file_type
+        schema:
+          type: string
+        description: Filter by file type
+      - in: query
+        name: is_public
+        schema:
+          type: string
+        description: Filter by public status
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: uploaded_by
+        schema:
+          type: string
+        description: Filter by uploader
+      tags:
+      - files
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFileUploadList'
+          description: ''
+    post:
+      operationId: files_create
+      description: Upload a new file with metadata. This endpoint handles both file
+        upload and metadata creation.
+      summary: Create File Upload
+      tags:
+      - files
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: File to upload
+                file_type:
+                  type: string
+                  enum:
+                  - transcript
+                  - behavior_report
+                  - payment_receipt
+                  - student_document
+                  - other
+                description:
+                  type: string
+                  description: File description (optional)
+                tags:
+                  type: string
+                  description: Comma-separated tags (optional)
+                is_public:
+                  type: boolean
+                  description: 'Whether file is public (default: false)'
+              required:
+              - file
+              - file_type
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileUpload'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                description: Validation error
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                description: Upload failed
+          description: ''
+  /api/files/{id}/:
+    get:
+      operationId: files_retrieve
+      description: Retrieve detailed information about a specific file
+      summary: Get File Details
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this file upload.
+        required: true
+      tags:
+      - files
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileUpload'
+          description: ''
+    put:
+      operationId: files_update
+      description: Update file metadata (not the actual file content)
+      summary: Update File
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this file upload.
+        required: true
+      tags:
+      - files
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FileUploadRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FileUploadRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FileUploadRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileUpload'
+          description: ''
+    patch:
+      operationId: files_partial_update
+      description: ViewSet for file upload management with local storage and Firebase
+        support
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this file upload.
+        required: true
+      tags:
+      - files
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedFileUploadRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedFileUploadRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedFileUploadRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileUpload'
+          description: ''
+    delete:
+      operationId: files_destroy
+      description: Mark file as deleted (soft delete)
+      summary: Delete File
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this file upload.
+        required: true
+      tags:
+      - files
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/files/{id}/delete_file/:
+    post:
+      operationId: files_delete_file_create
+      description: Delete file from storage and mark as deleted in database
+      summary: Delete File
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this file upload.
+        required: true
+      tags:
+      - files
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FileUploadRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FileUploadRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FileUploadRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                description: File deleted successfully
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                description: Deletion failed
+          description: ''
+  /api/files/search/:
+    get:
+      operationId: files_search_list
+      description: Search files by name, description, or tags
+      summary: Search Files
+      parameters:
+      - in: query
+        name: file_type
+        schema:
+          type: string
+          enum:
+          - behavior_report
+          - other
+          - payment_receipt
+          - student_document
+          - transcript
+        description: |-
+          * `transcript` - Academic Transcript
+          * `behavior_report` - Behavior Report
+          * `payment_receipt` - Payment Receipt
+          * `student_document` - Student Document
+          * `other` - Other
+      - in: query
+        name: is_public
+        schema:
+          type: boolean
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Search query
+        required: true
+      - in: query
+        name: uploaded_by
+        schema:
+          type: integer
+      tags:
+      - files
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFileUploadList'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                description: Search query required
+          description: ''
+  /api/files/test_upload/:
+    post:
+      operationId: files_test_upload_create
+      description: Simple endpoint to test file upload functionality. Upload a file
+        with basic metadata.
+      summary: Test File Upload
+      tags:
+      - files
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: File to upload (PDF, DOC, JPG, PNG, TXT)
+                file_type:
+                  type: string
+                  enum:
+                  - transcript
+                  - behavior_report
+                  - payment_receipt
+                  - student_document
+                  - other
+                description:
+                  type: string
+                  description: File description (optional)
+                tags:
+                  type: string
+                  description: 'Comma-separated tags like: academic, important, 2024
+                    (optional)'
+                is_public:
+                  type: boolean
+                  description: 'Whether file is public (default: false)'
+              required:
+              - file
+              - file_type
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileUpload'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                description: Validation error
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                description: Upload failed
+          description: ''
+  /api/files/upload/:
+    post:
+      operationId: files_upload_create
+      description: "\n        Upload a file to storage (local or Firebase).\n    \
+        \    \n        **Features:**\n        - Supports multiple file types (PDF,\
+        \ DOC, JPG, PNG, etc.)\n        - Automatic file validation (size, type)\n\
+        \        - School-based folder organization\n        - Automatic storage selection\
+        \ (local/Firebase)\n        \n        **Storage Behavior:**\n        - If\
+        \ Firebase is configured: Uses Firebase Storage\n        - If Firebase not\
+        \ configured: Uses local storage (free)\n        \n        **File Types Allowed:**\n\
+        \        - Documents: PDF, DOC, DOCX\n        - Images: JPG, JPEG, PNG, GIF\n\
+        \        - Text: TXT\n        \n        **Tags (Optional):**\n        - Can\
+        \ be left empty\n        - Use comma-separated values (e.g., \"academic, transcript,\
+        \ 2024\")\n        - Not required for file upload\n        "
+      summary: Upload File
+      tags:
+      - files
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                file_type:
+                  type: string
+                  enum:
+                  - transcript
+                  - behavior_report
+                  - payment_receipt
+                  - student_document
+                  - other
+                description:
+                  type: string
+                tags:
+                  type: string
+                  description: Comma-separated tags (optional)
+                is_public:
+                  type: boolean
+              required:
+              - file
+              - file_type
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileUpload'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                description: Validation error
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                description: Upload failed
+          description: ''
+  /api/notification-deliveries/:
+    get:
+      operationId: notification_deliveries_list
+      description: Retrieve delivery tracking information for notifications
+      summary: List Notification Deliveries
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedNotificationDeliveryList'
+          description: ''
+  /api/notification-deliveries/{id}/:
+    get:
+      operationId: notification_deliveries_retrieve
+      description: Retrieve detailed delivery information for a specific notification
+      summary: Get Delivery Details
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this notification delivery.
+        required: true
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationDelivery'
+          description: ''
+  /api/notifications/:
+    get:
+      operationId: notifications_list
+      description: Retrieve a list of notifications with pagination and filtering
+      summary: List Notifications
+      parameters:
+      - in: query
+        name: created_at
+        schema:
+          type: string
+        description: Filter by creation date
+      - in: query
+        name: notification_type
+        schema:
+          type: string
+        description: Filter by notification type
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: sent_via_fcm
+        schema:
+          type: string
+        description: Filter by FCM delivery status
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedNotificationList'
+          description: ''
+    post:
+      operationId: notifications_create
+      description: Create a new notification. The school will be automatically assigned
+        from your user account.
+      summary: Create Notification
+      tags:
+      - notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NotificationCreateRequest'
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/NotificationCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                description: Validation error - check that user has a school assigned
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                description: Creation failed
+          description: ''
+  /api/notifications/{id}/:
+    get:
+      operationId: notifications_retrieve
+      description: Retrieve detailed information about a specific notification
+      summary: Get Notification Details
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this notification.
+        required: true
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+    put:
+      operationId: notifications_update
+      description: Update notification content and settings
+      summary: Update Notification
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this notification.
+        required: true
+      tags:
+      - notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NotificationUpdateRequest'
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/NotificationUpdateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationUpdate'
+          description: ''
+    patch:
+      operationId: notifications_partial_update
+      description: ViewSet for notification management with FCM and email support
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this notification.
+        required: true
+      tags:
+      - notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedNotificationUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedNotificationUpdateRequest'
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/PatchedNotificationUpdateRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationUpdate'
+          description: ''
+    delete:
+      operationId: notifications_destroy
+      description: Delete a notification
+      summary: Delete Notification
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this notification.
+        required: true
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/notifications/{id}/resend/:
+    post:
+      operationId: notifications_resend_create
+      description: Resend a notification to all target users
+      summary: Resend Notification
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this notification.
+        required: true
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                description: Notification resent successfully
+                type: object
+                properties:
+                  message:
+                    type: string
+                  results:
+                    type: object
+                    properties:
+                      fcm_sent:
+                        type: integer
+                      email_sent:
+                        type: integer
+                      total_targets:
+                        type: integer
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                description: Resending failed
+          description: ''
+  /api/notifications/send_bulk/:
+    post:
+      operationId: notifications_send_bulk_create
+      description: Send a notification to multiple users simultaneously
+      summary: Send Bulk Notification
+      tags:
+      - notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  description: Notification title
+                body:
+                  type: string
+                  description: Notification content
+                notification_type:
+                  type: string
+                  enum:
+                  - academic
+                  - behavior
+                  - payment
+                  - general
+                  description: Type of notification
+                user_ids:
+                  type: array
+                  items:
+                    type: integer
+                  description: Target user IDs (empty for all school users)
+                data:
+                  type: object
+                  description: Additional data for the notification
+              required:
+              - title
+              - body
+              - notification_type
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                description: Bulk notification sent successfully
+                type: object
+                properties:
+                  message:
+                    type: string
+                  results:
+                    type: object
+                    properties:
+                      fcm_sent:
+                        type: integer
+                      email_sent:
+                        type: integer
+                      total_targets:
+                        type: integer
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                description: Validation error
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                description: Sending failed
+          description: ''
+  /api/parent-dashboard/:
+    get:
+      operationId: parent_dashboard_retrieve
+      description: Retrieve all children of the authenticated parent
+      summary: Get My Children
+      tags:
+      - parents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/parent-dashboard/{id}/child_behavior/:
+    get:
+      operationId: parent_dashboard_child_behavior_retrieve
+      description: Retrieve behavior reports for a specific child
+      summary: Get Child Behavior Reports
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - parents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/parent-dashboard/{id}/child_details/:
+    get:
+      operationId: parent_dashboard_child_details_retrieve
+      description: Get detailed information about a specific child
+      summary: Get Child Details
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - parents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/parent-dashboard/{id}/child_payments/:
+    get:
+      operationId: parent_dashboard_child_payments_retrieve
+      description: Retrieve payment records for a specific child
+      summary: Get Child Payment Records
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - parents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/parent-dashboard/{id}/child_statistics/:
+    get:
+      operationId: parent_dashboard_child_statistics_retrieve
+      description: Get comprehensive statistics for a specific child
+      summary: Get Child Statistics
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - parents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/parent-dashboard/{id}/child_transcripts/:
+    get:
+      operationId: parent_dashboard_child_transcripts_retrieve
+      description: Retrieve academic transcripts for a specific child
+      summary: Get Child Transcripts
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - parents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/parent-dashboard/{id}/mark_notification_read/:
+    post:
+      operationId: parent_dashboard_mark_notification_read_create
+      description: Mark a specific notification as read for the parent
+      summary: Mark Notification as Read
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - parents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/parent-dashboard/my_children/:
+    get:
+      operationId: parent_dashboard_my_children_retrieve
+      description: Retrieve all children of the authenticated parent
+      summary: Get My Children
+      tags:
+      - parents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/parent-dashboard/notification_preferences/:
+    get:
+      operationId: parent_dashboard_notification_preferences_retrieve
+      description: Get current notification preferences or update them
+      summary: Get/Update Notification Preferences
+      tags:
+      - parents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    put:
+      operationId: parent_dashboard_notification_preferences_update
+      description: Get current notification preferences or update them
+      summary: Get/Update Notification Preferences
+      tags:
+      - parents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: parent_dashboard_notification_preferences_partial_update
+      description: Get current notification preferences or update them
+      summary: Get/Update Notification Preferences
+      tags:
+      - parents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/parent-dashboard/notifications/:
+    get:
+      operationId: parent_dashboard_notifications_retrieve
+      description: Retrieve notifications relevant to the parent
+      summary: Get Parent Notifications
+      tags:
+      - parents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/parent-dashboard/profile/:
+    get:
+      operationId: parent_dashboard_profile_retrieve
+      description: Get current profile information or update profile details
+      summary: Get/Update Parent Profile
+      tags:
+      - parents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: parent_dashboard_profile_partial_update
+      description: Get current profile information or update profile details
+      summary: Get/Update Parent Profile
+      tags:
+      - parents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/parent-dashboard/test_notification/:
+    post:
+      operationId: parent_dashboard_test_notification_create
+      description: Send a test notification to all parents in the school (for development/testing)
+      summary: Test Notification System
+      tags:
+      - parents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/parent-dashboard/unread_notifications_count/:
+    get:
+      operationId: parent_dashboard_unread_notifications_count_retrieve
+      description: Get the count of unread notifications for the parent
+      summary: Get Unread Notifications Count
+      tags:
+      - parents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/parent-students/:
+    get:
+      operationId: parent_students_list
+      description: ViewSet for parent-student relationships
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - parent-students
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedParentStudentList'
+          description: ''
+    post:
+      operationId: parent_students_create
+      description: ViewSet for parent-student relationships
+      tags:
+      - parent-students
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParentStudentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ParentStudentRequest'
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/ParentStudentRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParentStudent'
+          description: ''
+  /api/parent-students/{id}/:
+    get:
+      operationId: parent_students_retrieve
+      description: ViewSet for parent-student relationships
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Parent-Student Relationship.
+        required: true
+      tags:
+      - parent-students
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParentStudent'
+          description: ''
+    put:
+      operationId: parent_students_update
+      description: ViewSet for parent-student relationships
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Parent-Student Relationship.
+        required: true
+      tags:
+      - parent-students
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParentStudentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ParentStudentRequest'
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/ParentStudentRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParentStudent'
+          description: ''
+    patch:
+      operationId: parent_students_partial_update
+      description: ViewSet for parent-student relationships
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Parent-Student Relationship.
+        required: true
+      tags:
+      - parent-students
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedParentStudentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedParentStudentRequest'
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/PatchedParentStudentRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParentStudent'
+          description: ''
+    delete:
+      operationId: parent_students_destroy
+      description: ViewSet for parent-student relationships
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Parent-Student Relationship.
+        required: true
+      tags:
+      - parent-students
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/payment-records/:
+    get:
+      operationId: payment_records_list
+      description: ViewSet for payment records
+      parameters:
+      - in: query
+        name: currency
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: payment_type
+        schema:
+          type: string
+          enum:
+          - examination
+          - laboratory
+          - library
+          - meal
+          - other
+          - sports
+          - transport
+          - tuition
+          - uniform
+        description: |-
+          * `tuition` - Tuition Fee
+          * `library` - Library Fee
+          * `laboratory` - Laboratory Fee
+          * `sports` - Sports Fee
+          * `transport` - Transport Fee
+          * `meal` - Meal Fee
+          * `uniform` - Uniform Fee
+          * `examination` - Examination Fee
+          * `other` - Other
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - cancelled
+          - overdue
+          - paid
+          - pending
+          - refunded
+        description: |-
+          * `pending` - Pending
+          * `paid` - Paid
+          * `overdue` - Overdue
+          * `cancelled` - Cancelled
+          * `refunded` - Refunded
+      tags:
+      - payment-records
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPaymentRecordList'
+          description: ''
+    post:
+      operationId: payment_records_create
+      description: ViewSet for payment records
+      tags:
+      - payment-records
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentRecordRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PaymentRecordRequest'
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/PaymentRecordRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentRecord'
+          description: ''
+  /api/payment-records/{id}/:
+    get:
+      operationId: payment_records_retrieve
+      description: ViewSet for payment records
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Payment Record.
+        required: true
+      tags:
+      - payment-records
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentRecord'
+          description: ''
+    put:
+      operationId: payment_records_update
+      description: ViewSet for payment records
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Payment Record.
+        required: true
+      tags:
+      - payment-records
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentRecordRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PaymentRecordRequest'
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/PaymentRecordRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentRecord'
+          description: ''
+    patch:
+      operationId: payment_records_partial_update
+      description: ViewSet for payment records
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Payment Record.
+        required: true
+      tags:
+      - payment-records
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPaymentRecordRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPaymentRecordRequest'
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/PatchedPaymentRecordRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentRecord'
+          description: ''
+    delete:
+      operationId: payment_records_destroy
+      description: ViewSet for payment records
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Payment Record.
+        required: true
+      tags:
+      - payment-records
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/payment-records/overdue_payments/:
+    get:
+      operationId: payment_records_overdue_payments_retrieve
+      description: Get all overdue payments
+      tags:
+      - payment-records
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentRecord'
+          description: ''
+  /api/payment-records/payment_summary/:
+    get:
+      operationId: payment_records_payment_summary_retrieve
+      description: Get payment summary statistics
+      tags:
+      - payment-records
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentRecord'
+          description: ''
+  /api/schools/:
+    get:
+      operationId: schools_list
+      description: "\n        Retrieve a list of schools with filtering and pagination.\n\
+        \        \n        **Permissions:**\n        - Super admins: Can view all\
+        \ schools\n        - School staff: Can only view their own school\n      \
+        \  - Other users: No access\n        "
+      summary: List Schools
+      parameters:
+      - in: query
+        name: city
+        schema:
+          type: string
+        description: Filter by city
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+        description: Filter by active status
+      - in: query
+        name: is_verified
+        schema:
+          type: boolean
+        description: Filter by verification status
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: school_type
+        schema:
+          type: string
+        description: 'Filter by school type: primary, secondary, both, university,
+          other'
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Search schools by name, email, or address
+      - in: query
+        name: state
+        schema:
+          type: string
+        description: Filter by state
+      tags:
+      - schools
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSchoolListList'
+              examples:
+                ListAllSchools:
+                  value:
+                    count: 123
+                    next: http://api.example.org/accounts/?page=4
+                    previous: http://api.example.org/accounts/?page=2
+                    results:
+                    - count: 25
+                      next: http://api.example.com/api/schools/?page=2
+                      previous: null
+                      results:
+                      - id: 123e4567-e89b-12d3-a456-426614174000
+                        name: École Primaire de Niamey
+                        slug: ecole-primaire-niamey
+                        school_type: primary
+                        city: Niamey
+                        state: Niamey
+                        is_active: true
+                        is_verified: true
+                        student_count: 150
+                        staff_count: 12
+                  summary: List all schools
+                  description: Get a paginated list of all schools
+          description: ''
+    post:
+      operationId: schools_create
+      description: "\n        Create a new school with default configuration.\n  \
+        \      \n        **Permissions:**\n        - Only super admins can create\
+        \ schools\n        \n        **Note:** A default school configuration will\
+        \ be automatically created.\n        "
+      summary: Create School
+      tags:
+      - schools
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SchoolCreateRequest'
+            examples:
+              CreateSchool:
+                value:
+                  name: École Secondaire de Maradi
+                  school_type: secondary
+                  academic_year: 2024-2025
+                  contact_email: contact@ecole-maradi.ne
+                  contact_phone: '+22712345678'
+                  website: https://ecole-maradi.ne
+                  address: Quartier Sabon Gari, Maradi
+                  city: Maradi
+                  state: Maradi
+                  country: Niger
+                  postal_code: '8000'
+                  primary_color: '#1976D2'
+                  secondary_color: '#424242'
+                summary: Create a new school
+                description: Create a new school with all required fields
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SchoolCreateRequest'
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/SchoolCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchoolCreate'
+              examples:
+                CreateSchool:
+                  value:
+                    name: École Secondaire de Maradi
+                    school_type: secondary
+                    academic_year: 2024-2025
+                    contact_email: contact@ecole-maradi.ne
+                    contact_phone: '+22712345678'
+                    website: https://ecole-maradi.ne
+                    address: Quartier Sabon Gari, Maradi
+                    city: Maradi
+                    state: Maradi
+                    country: Niger
+                    postal_code: '8000'
+                    primary_color: '#1976D2'
+                    secondary_color: '#424242'
+                  summary: Create a new school
+                  description: Create a new school with all required fields
+          description: ''
+  /api/schools/{id}/:
+    get:
+      operationId: schools_retrieve
+      description: "\n        Retrieve detailed information about a specific school.\n\
+        \        \n        **Permissions:**\n        - Super admins: Can view any\
+        \ school\n        - School staff: Can only view their own school\n       \
+        \ - Other users: No access\n        "
+      summary: Retrieve School
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this School.
+        required: true
+      tags:
+      - schools
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchoolDetail'
+              examples:
+                SchoolDetails:
+                  value:
+                    id: 123e4567-e89b-12d3-a456-426614174000
+                    name: École Primaire de Niamey
+                    slug: ecole-primaire-niamey
+                    school_type: primary
+                    academic_year: 2024-2025
+                    logo: https://firebase-storage.com/schools/logos/logo.png
+                    primary_color: '#1976D2'
+                    secondary_color: '#424242'
+                    contact_email: contact@ecole-niamey.ne
+                    contact_phone: '+22712345678'
+                    website: https://ecole-niamey.ne
+                    address: Quartier Plateau, Niamey
+                    city: Niamey
+                    state: Niamey
+                    country: Niger
+                    postal_code: '10000'
+                    is_active: true
+                    is_verified: true
+                    student_count: 150
+                    staff_count: 12
+                    configuration:
+                      academic_year_start: '2024-09-01'
+                      academic_year_end: '2025-06-30'
+                      current_semester: first
+                      enable_sms_notifications: true
+                      enable_email_notifications: true
+                      enable_push_notifications: true
+                      currency: NGN
+                      payment_reminder_days: 7
+                      max_file_size_mb: 10
+                      allowed_file_types:
+                      - .pdf
+                      - .doc
+                      - .docx
+                      - .jpg
+                      - .jpeg
+                      - .png
+                    created_at: '2024-01-15T10:30:00Z'
+                    updated_at: '2024-09-04T14:20:00Z'
+                  summary: Get school details
+                  description: Retrieve complete school information including configuration
+          description: ''
+    put:
+      operationId: schools_update
+      description: "\n        Update school information (full update).\n        \n\
+        \        **Permissions:**\n        - Super admins: Can update any school\n\
+        \        - School staff: Can only update their own school\n        - Other\
+        \ users: No access\n        "
+      summary: Update School
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this School.
+        required: true
+      tags:
+      - schools
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SchoolUpdateRequest'
+            examples:
+              UpdateSchool:
+                value:
+                  name: École Primaire de Niamey - Updated
+                  school_type: both
+                  academic_year: 2024-2025
+                  logo: https://firebase-storage.com/schools/logos/new-logo.png
+                  primary_color: '#FF5722'
+                  secondary_color: '#607D8B'
+                  contact_email: new-contact@ecole-niamey.ne
+                  contact_phone: '+22798765432'
+                  website: https://new-ecole-niamey.ne
+                  address: Nouveau Quartier, Niamey
+                  city: Niamey
+                  state: Niamey
+                  country: Niger
+                  postal_code: '10001'
+                  is_active: true
+                  is_verified: true
+                  configuration:
+                    academic_year_start: '2024-09-01'
+                    academic_year_end: '2025-06-30'
+                    current_semester: first
+                    enable_sms_notifications: false
+                    enable_email_notifications: true
+                    enable_push_notifications: true
+                    currency: USD
+                    payment_reminder_days: 14
+                    max_file_size_mb: 20
+                    allowed_file_types:
+                    - .pdf
+                    - .doc
+                    - .docx
+                    - .jpg
+                    - .jpeg
+                    - .png
+                    - .gif
+                summary: Update school information
+                description: Update school details including configuration
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SchoolUpdateRequest'
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/SchoolUpdateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchoolUpdate'
+              examples:
+                UpdateSchool:
+                  value:
+                    name: École Primaire de Niamey - Updated
+                    school_type: both
+                    academic_year: 2024-2025
+                    logo: https://firebase-storage.com/schools/logos/new-logo.png
+                    primary_color: '#FF5722'
+                    secondary_color: '#607D8B'
+                    contact_email: new-contact@ecole-niamey.ne
+                    contact_phone: '+22798765432'
+                    website: https://new-ecole-niamey.ne
+                    address: Nouveau Quartier, Niamey
+                    city: Niamey
+                    state: Niamey
+                    country: Niger
+                    postal_code: '10001'
+                    is_active: true
+                    is_verified: true
+                    configuration:
+                      academic_year_start: '2024-09-01'
+                      academic_year_end: '2025-06-30'
+                      current_semester: first
+                      enable_sms_notifications: false
+                      enable_email_notifications: true
+                      enable_push_notifications: true
+                      currency: USD
+                      payment_reminder_days: 14
+                      max_file_size_mb: 20
+                      allowed_file_types:
+                      - .pdf
+                      - .doc
+                      - .docx
+                      - .jpg
+                      - .jpeg
+                      - .png
+                      - .gif
+                  summary: Update school information
+                  description: Update school details including configuration
+          description: ''
+    patch:
+      operationId: schools_partial_update
+      description: "\n        Partially update school information.\n        \n   \
+        \     **Permissions:**\n        - Super admins: Can update any school\n  \
+        \      - School staff: Can only update their own school\n        - Other users:\
+        \ No access\n        "
+      summary: Partially Update School
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this School.
+        required: true
+      tags:
+      - schools
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSchoolUpdateRequest'
+            examples:
+              UpdateBrandingOnly:
+                value:
+                  name: École Primaire de Niamey - New Name
+                  logo: https://firebase-storage.com/schools/logos/brand-new-logo.png
+                  primary_color: '#4CAF50'
+                  secondary_color: '#2196F3'
+                summary: Update school branding
+                description: Update only school branding elements (name, logo, colors)
+              UpdateContactInfoOnly:
+                value:
+                  contact_email: info@ecole-niamey.ne
+                  contact_phone: '+22712345678'
+                  website: https://www.ecole-niamey.ne
+                  address: Avenue de la République, Niamey
+                  city: Niamey
+                  state: Niamey
+                  postal_code: '10000'
+                summary: Update contact information
+                description: Update only contact details
+              UpdateStatusOnly:
+                value:
+                  is_active: true
+                  is_verified: true
+                summary: Update school status
+                description: Update only school status fields
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSchoolUpdateRequest'
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/PatchedSchoolUpdateRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchoolUpdate'
+              examples:
+                UpdateBrandingOnly:
+                  value:
+                    name: École Primaire de Niamey - New Name
+                    logo: https://firebase-storage.com/schools/logos/brand-new-logo.png
+                    primary_color: '#4CAF50'
+                    secondary_color: '#2196F3'
+                  summary: Update school branding
+                  description: Update only school branding elements (name, logo, colors)
+                UpdateContactInfoOnly:
+                  value:
+                    contact_email: info@ecole-niamey.ne
+                    contact_phone: '+22712345678'
+                    website: https://www.ecole-niamey.ne
+                    address: Avenue de la République, Niamey
+                    city: Niamey
+                    state: Niamey
+                    postal_code: '10000'
+                  summary: Update contact information
+                  description: Update only contact details
+                UpdateStatusOnly:
+                  value:
+                    is_active: true
+                    is_verified: true
+                  summary: Update school status
+                  description: Update only school status fields
+          description: ''
+    delete:
+      operationId: schools_destroy
+      description: "\n        Delete a school permanently.\n        \n        **Permissions:**\n\
+        \        - Only super admins can delete schools\n        \n        **Warning:**\
+        \ This action cannot be undone!\n        "
+      summary: Delete School
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this School.
+        required: true
+      tags:
+      - schools
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/schools/{id}/activate/:
+    post:
+      operationId: schools_activate_create
+      description: "\n        Activate a school to make it available for use.\n  \
+        \      \n        **Permissions:**\n        - Super admins: Can activate any\
+        \ school\n        - School staff: Can only activate their own school\n   \
+        \     - Other users: No access\n        \n        **Note:** This action sets\
+        \ `is_active=True` for the school.\n        "
+      summary: Activate School
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this School.
+        required: true
+      tags:
+      - schools
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SchoolDetailRequest'
+            examples:
+              ActivateSchool:
+                value:
+                  message: School activated successfully
+                summary: Activate school
+                description: Activate a school
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SchoolDetailRequest'
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/SchoolDetailRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchoolDetail'
+              examples:
+                ActivateSchool:
+                  value:
+                    message: School activated successfully
+                  summary: Activate school
+                  description: Activate a school
+          description: ''
+  /api/schools/{id}/configuration/:
+    get:
+      operationId: schools_configuration_retrieve
+      description: "\n        Get, update, or partially update school configuration\
+        \ settings.\n        \n        **Configuration Settings:**\n        - **Academic\
+        \ Settings**: Academic year dates, current semester\n        - **Notification\
+        \ Settings**: SMS, email, and push notification toggles\n        - **Payment\
+        \ Settings**: Currency, payment reminder days\n        - **File Upload Settings**:\
+        \ Max file size, allowed file types\n        \n        **Permissions:**\n\
+        \        - Super admins: Can manage configuration for any school\n       \
+        \ - School staff: Can only manage configuration for their own school\n   \
+        \     - Other users: No access\n        \n        **Methods:**\n        -\
+        \ `GET`: Retrieve current configuration\n        - `PUT`: Update entire configuration\
+        \ (full replacement)\n        - `PATCH`: Partially update configuration\n\
+        \        "
+      summary: Manage School Configuration
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this School.
+        required: true
+      tags:
+      - schools
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchoolDetail'
+              examples:
+                GetConfiguration:
+                  value:
+                    academic_year_start: '2024-09-01'
+                    academic_year_end: '2025-06-30'
+                    current_semester: first
+                    enable_sms_notifications: true
+                    enable_email_notifications: true
+                    enable_push_notifications: true
+                    currency: NGN
+                    payment_reminder_days: 7
+                    max_file_size_mb: 10
+                    allowed_file_types:
+                    - .pdf
+                    - .doc
+                    - .docx
+                    - .jpg
+                    - .jpeg
+                    - .png
+                  summary: Get school configuration
+                  description: Retrieve current school configuration settings
+                UpdateConfiguration:
+                  value:
+                    academic_year_start: '2024-09-01'
+                    academic_year_end: '2025-06-30'
+                    current_semester: second
+                    enable_sms_notifications: false
+                    enable_email_notifications: true
+                    enable_push_notifications: true
+                    currency: USD
+                    payment_reminder_days: 14
+                    max_file_size_mb: 20
+                    allowed_file_types:
+                    - .pdf
+                    - .doc
+                    - .docx
+                    - .jpg
+                    - .jpeg
+                    - .png
+                    - .gif
+                    - .txt
+                  summary: Update school configuration
+                  description: Update school configuration settings
+                PartialUpdate:
+                  value:
+                    enable_sms_notifications: false
+                    currency: EUR
+                    max_file_size_mb: 15
+                  summary: Partially update configuration
+                  description: Update only specific configuration fields
+          description: ''
+    put:
+      operationId: schools_configuration_update
+      description: "\n        Get, update, or partially update school configuration\
+        \ settings.\n        \n        **Configuration Settings:**\n        - **Academic\
+        \ Settings**: Academic year dates, current semester\n        - **Notification\
+        \ Settings**: SMS, email, and push notification toggles\n        - **Payment\
+        \ Settings**: Currency, payment reminder days\n        - **File Upload Settings**:\
+        \ Max file size, allowed file types\n        \n        **Permissions:**\n\
+        \        - Super admins: Can manage configuration for any school\n       \
+        \ - School staff: Can only manage configuration for their own school\n   \
+        \     - Other users: No access\n        \n        **Methods:**\n        -\
+        \ `GET`: Retrieve current configuration\n        - `PUT`: Update entire configuration\
+        \ (full replacement)\n        - `PATCH`: Partially update configuration\n\
+        \        "
+      summary: Manage School Configuration
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this School.
+        required: true
+      tags:
+      - schools
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SchoolDetailRequest'
+            examples:
+              GetConfiguration:
+                value:
+                  academic_year_start: '2024-09-01'
+                  academic_year_end: '2025-06-30'
+                  current_semester: first
+                  enable_sms_notifications: true
+                  enable_email_notifications: true
+                  enable_push_notifications: true
+                  currency: NGN
+                  payment_reminder_days: 7
+                  max_file_size_mb: 10
+                  allowed_file_types:
+                  - .pdf
+                  - .doc
+                  - .docx
+                  - .jpg
+                  - .jpeg
+                  - .png
+                summary: Get school configuration
+                description: Retrieve current school configuration settings
+              UpdateConfiguration:
+                value:
+                  academic_year_start: '2024-09-01'
+                  academic_year_end: '2025-06-30'
+                  current_semester: second
+                  enable_sms_notifications: false
+                  enable_email_notifications: true
+                  enable_push_notifications: true
+                  currency: USD
+                  payment_reminder_days: 14
+                  max_file_size_mb: 20
+                  allowed_file_types:
+                  - .pdf
+                  - .doc
+                  - .docx
+                  - .jpg
+                  - .jpeg
+                  - .png
+                  - .gif
+                  - .txt
+                summary: Update school configuration
+                description: Update school configuration settings
+              PartialUpdate:
+                value:
+                  enable_sms_notifications: false
+                  currency: EUR
+                  max_file_size_mb: 15
+                summary: Partially update configuration
+                description: Update only specific configuration fields
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SchoolDetailRequest'
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/SchoolDetailRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchoolDetail'
+              examples:
+                GetConfiguration:
+                  value:
+                    academic_year_start: '2024-09-01'
+                    academic_year_end: '2025-06-30'
+                    current_semester: first
+                    enable_sms_notifications: true
+                    enable_email_notifications: true
+                    enable_push_notifications: true
+                    currency: NGN
+                    payment_reminder_days: 7
+                    max_file_size_mb: 10
+                    allowed_file_types:
+                    - .pdf
+                    - .doc
+                    - .docx
+                    - .jpg
+                    - .jpeg
+                    - .png
+                  summary: Get school configuration
+                  description: Retrieve current school configuration settings
+                UpdateConfiguration:
+                  value:
+                    academic_year_start: '2024-09-01'
+                    academic_year_end: '2025-06-30'
+                    current_semester: second
+                    enable_sms_notifications: false
+                    enable_email_notifications: true
+                    enable_push_notifications: true
+                    currency: USD
+                    payment_reminder_days: 14
+                    max_file_size_mb: 20
+                    allowed_file_types:
+                    - .pdf
+                    - .doc
+                    - .docx
+                    - .jpg
+                    - .jpeg
+                    - .png
+                    - .gif
+                    - .txt
+                  summary: Update school configuration
+                  description: Update school configuration settings
+                PartialUpdate:
+                  value:
+                    enable_sms_notifications: false
+                    currency: EUR
+                    max_file_size_mb: 15
+                  summary: Partially update configuration
+                  description: Update only specific configuration fields
+          description: ''
+    patch:
+      operationId: schools_configuration_partial_update
+      description: "\n        Get, update, or partially update school configuration\
+        \ settings.\n        \n        **Configuration Settings:**\n        - **Academic\
+        \ Settings**: Academic year dates, current semester\n        - **Notification\
+        \ Settings**: SMS, email, and push notification toggles\n        - **Payment\
+        \ Settings**: Currency, payment reminder days\n        - **File Upload Settings**:\
+        \ Max file size, allowed file types\n        \n        **Permissions:**\n\
+        \        - Super admins: Can manage configuration for any school\n       \
+        \ - School staff: Can only manage configuration for their own school\n   \
+        \     - Other users: No access\n        \n        **Methods:**\n        -\
+        \ `GET`: Retrieve current configuration\n        - `PUT`: Update entire configuration\
+        \ (full replacement)\n        - `PATCH`: Partially update configuration\n\
+        \        "
+      summary: Manage School Configuration
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this School.
+        required: true
+      tags:
+      - schools
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSchoolDetailRequest'
+            examples:
+              GetConfiguration:
+                value:
+                  academic_year_start: '2024-09-01'
+                  academic_year_end: '2025-06-30'
+                  current_semester: first
+                  enable_sms_notifications: true
+                  enable_email_notifications: true
+                  enable_push_notifications: true
+                  currency: NGN
+                  payment_reminder_days: 7
+                  max_file_size_mb: 10
+                  allowed_file_types:
+                  - .pdf
+                  - .doc
+                  - .docx
+                  - .jpg
+                  - .jpeg
+                  - .png
+                summary: Get school configuration
+                description: Retrieve current school configuration settings
+              UpdateConfiguration:
+                value:
+                  academic_year_start: '2024-09-01'
+                  academic_year_end: '2025-06-30'
+                  current_semester: second
+                  enable_sms_notifications: false
+                  enable_email_notifications: true
+                  enable_push_notifications: true
+                  currency: USD
+                  payment_reminder_days: 14
+                  max_file_size_mb: 20
+                  allowed_file_types:
+                  - .pdf
+                  - .doc
+                  - .docx
+                  - .jpg
+                  - .jpeg
+                  - .png
+                  - .gif
+                  - .txt
+                summary: Update school configuration
+                description: Update school configuration settings
+              PartialUpdate:
+                value:
+                  enable_sms_notifications: false
+                  currency: EUR
+                  max_file_size_mb: 15
+                summary: Partially update configuration
+                description: Update only specific configuration fields
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSchoolDetailRequest'
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/PatchedSchoolDetailRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchoolDetail'
+              examples:
+                GetConfiguration:
+                  value:
+                    academic_year_start: '2024-09-01'
+                    academic_year_end: '2025-06-30'
+                    current_semester: first
+                    enable_sms_notifications: true
+                    enable_email_notifications: true
+                    enable_push_notifications: true
+                    currency: NGN
+                    payment_reminder_days: 7
+                    max_file_size_mb: 10
+                    allowed_file_types:
+                    - .pdf
+                    - .doc
+                    - .docx
+                    - .jpg
+                    - .jpeg
+                    - .png
+                  summary: Get school configuration
+                  description: Retrieve current school configuration settings
+                UpdateConfiguration:
+                  value:
+                    academic_year_start: '2024-09-01'
+                    academic_year_end: '2025-06-30'
+                    current_semester: second
+                    enable_sms_notifications: false
+                    enable_email_notifications: true
+                    enable_push_notifications: true
+                    currency: USD
+                    payment_reminder_days: 14
+                    max_file_size_mb: 20
+                    allowed_file_types:
+                    - .pdf
+                    - .doc
+                    - .docx
+                    - .jpg
+                    - .jpeg
+                    - .png
+                    - .gif
+                    - .txt
+                  summary: Update school configuration
+                  description: Update school configuration settings
+                PartialUpdate:
+                  value:
+                    enable_sms_notifications: false
+                    currency: EUR
+                    max_file_size_mb: 15
+                  summary: Partially update configuration
+                  description: Update only specific configuration fields
+          description: ''
+  /api/schools/{id}/deactivate/:
+    post:
+      operationId: schools_deactivate_create
+      description: "\n        Deactivate a school to make it unavailable for use.\n\
+        \        \n        **Permissions:**\n        - Super admins: Can deactivate\
+        \ any school\n        - School staff: Can only deactivate their own school\n\
+        \        - Other users: No access\n        \n        **Note:** This action\
+        \ sets `is_active=False` for the school.\n        "
+      summary: Deactivate School
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this School.
+        required: true
+      tags:
+      - schools
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SchoolDetailRequest'
+            examples:
+              DeactivateSchool:
+                value:
+                  message: School deactivated successfully
+                summary: Deactivate school
+                description: Deactivate a school
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SchoolDetailRequest'
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/SchoolDetailRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchoolDetail'
+              examples:
+                DeactivateSchool:
+                  value:
+                    message: School deactivated successfully
+                  summary: Deactivate school
+                  description: Deactivate a school
+          description: ''
+  /api/schools/{id}/statistics/:
+    get:
+      operationId: schools_statistics_retrieve
+      description: "\n        Retrieve comprehensive statistics for a specific school.\n\
+        \        \n        **Statistics Include:**\n        - Total student count\n\
+        \        - Class level distribution\n        - Gender distribution\n     \
+        \   - Recent enrollments (last 30 days)\n        - Payment statistics (total,\
+        \ paid, overdue)\n        \n        **Permissions:**\n        - Super admins:\
+        \ Can view statistics for any school\n        - School staff: Can only view\
+        \ statistics for their own school\n        - Other users: No access\n    \
+        \    "
+      summary: Get School Statistics
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this School.
+        required: true
+      tags:
+      - schools
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchoolDetail'
+              examples:
+                SchoolStatistics:
+                  value:
+                    total_students: 150
+                    class_distribution:
+                    - class_level: Grade 1
+                      count: 25
+                    - class_level: Grade 2
+                      count: 30
+                    - class_level: Grade 3
+                      count: 28
+                    - class_level: Grade 4
+                      count: 32
+                    - class_level: Grade 5
+                      count: 35
+                    gender_distribution:
+                    - gender: M
+                      count: 78
+                    - gender: F
+                      count: 72
+                    recent_enrollments: 12
+                    payment_statistics:
+                      total_payments: 450
+                      paid_payments: 380
+                      overdue_payments: 70
+                  summary: Get school statistics
+                  description: Retrieve comprehensive school analytics
+          description: ''
+  /api/students/:
+    get:
+      operationId: students_list
+      description: |-
+        ViewSet for student management
+        School staff can manage students in their school
+        Parents can view their children
+      parameters:
+      - in: query
+        name: class_level
+        schema:
+          type: string
+      - in: query
+        name: gender
+        schema:
+          type: string
+          enum:
+          - female
+          - male
+          - other
+        description: |-
+          * `male` - Male
+          * `female` - Female
+          * `other` - Other
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - in: query
+        name: is_graduated
+        schema:
+          type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: section
+        schema:
+          type: string
+      tags:
+      - students
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedStudentListList'
+          description: ''
+    post:
+      operationId: students_create
+      description: |-
+        ViewSet for student management
+        School staff can manage students in their school
+        Parents can view their children
+      tags:
+      - students
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudentCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StudentCreateRequest'
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/StudentCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentCreate'
+          description: ''
+  /api/students/{id}/:
+    get:
+      operationId: students_retrieve
+      description: |-
+        ViewSet for student management
+        School staff can manage students in their school
+        Parents can view their children
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Student.
+        required: true
+      tags:
+      - students
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentDetail'
+          description: ''
+    put:
+      operationId: students_update
+      description: |-
+        ViewSet for student management
+        School staff can manage students in their school
+        Parents can view their children
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Student.
+        required: true
+      tags:
+      - students
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudentUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StudentUpdateRequest'
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/StudentUpdateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentUpdate'
+          description: ''
+    patch:
+      operationId: students_partial_update
+      description: |-
+        ViewSet for student management
+        School staff can manage students in their school
+        Parents can view their children
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Student.
+        required: true
+      tags:
+      - students
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedStudentUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedStudentUpdateRequest'
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/PatchedStudentUpdateRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentUpdate'
+          description: ''
+    delete:
+      operationId: students_destroy
+      description: |-
+        ViewSet for student management
+        School staff can manage students in their school
+        Parents can view their children
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Student.
+        required: true
+      tags:
+      - students
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/students/{id}/academic_records/:
+    get:
+      operationId: students_academic_records_retrieve
+      description: Get student's academic records
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Student.
+        required: true
+      tags:
+      - students
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentDetail'
+          description: ''
+  /api/students/{id}/behavior_reports/:
+    get:
+      operationId: students_behavior_reports_retrieve
+      description: Get student's behavior reports
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Student.
+        required: true
+      tags:
+      - students
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentDetail'
+          description: ''
+  /api/students/{id}/payment_records/:
+    get:
+      operationId: students_payment_records_retrieve
+      description: Get student's payment records
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Student.
+        required: true
+      tags:
+      - students
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentDetail'
+          description: ''
+  /api/students/{id}/statistics/:
+    get:
+      operationId: students_statistics_retrieve
+      description: Get student statistics
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Student.
+        required: true
+      tags:
+      - students
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentDetail'
+          description: ''
+  /api/task-results/:
+    get:
+      operationId: task_results_list
+      description: Retrieve a list of completed task results
+      summary: List Task Results
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - tasks
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTaskResultList'
+          description: ''
+  /api/task-results/{id}/:
+    get:
+      operationId: task_results_retrieve
+      description: Retrieve detailed information about a specific task result
+      summary: Get Task Result
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task result.
+        required: true
+      tags:
+      - tasks
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResult'
+          description: ''
+  /api/task-results/active/:
+    get:
+      operationId: task_results_active_retrieve
+      description: Get list of currently running tasks
+      summary: Get Active Tasks
+      tags:
+      - tasks
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResult'
+          description: ''
+  /api/task-results/workers/:
+    get:
+      operationId: task_results_workers_retrieve
+      description: Get status of Celery workers
+      summary: Get Worker Status
+      tags:
+      - tasks
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskResult'
+          description: ''
+  /api/transcripts/:
+    get:
+      operationId: transcripts_list
+      description: ViewSet for academic transcripts
+      parameters:
+      - in: query
+        name: academic_year
+        schema:
+          type: string
+      - in: query
+        name: is_public
+        schema:
+          type: boolean
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: semester
+        schema:
+          type: string
+          enum:
+          - annual
+          - first
+          - second
+          - summer
+        description: |-
+          * `first` - First Semester
+          * `second` - Second Semester
+          * `summer` - Summer Session
+          * `annual` - Annual Report
+      tags:
+      - transcripts
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTranscriptList'
+          description: ''
+    post:
+      operationId: transcripts_create
+      description: ViewSet for academic transcripts
+      tags:
+      - transcripts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TranscriptRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TranscriptRequest'
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/TranscriptRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transcript'
+          description: ''
+  /api/transcripts/{id}/:
+    get:
+      operationId: transcripts_retrieve
+      description: ViewSet for academic transcripts
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Transcript.
+        required: true
+      tags:
+      - transcripts
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transcript'
+          description: ''
+    put:
+      operationId: transcripts_update
+      description: ViewSet for academic transcripts
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Transcript.
+        required: true
+      tags:
+      - transcripts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TranscriptRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TranscriptRequest'
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/TranscriptRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transcript'
+          description: ''
+    patch:
+      operationId: transcripts_partial_update
+      description: ViewSet for academic transcripts
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Transcript.
+        required: true
+      tags:
+      - transcripts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTranscriptRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTranscriptRequest'
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/PatchedTranscriptRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transcript'
+          description: ''
+    delete:
+      operationId: transcripts_destroy
+      description: ViewSet for academic transcripts
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Transcript.
+        required: true
+      tags:
+      - transcripts
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+components:
+  schemas:
+    BehaviorReport:
+      type: object
+      description: Serializer for behavior reports
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        student:
+          type: string
+          format: uuid
+        student_name:
+          type: string
+          readOnly: true
+        report_type:
+          $ref: '#/components/schemas/ReportTypeEnum'
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        location:
+          type: string
+          maxLength: 100
+        incident_date:
+          type: string
+          format: date
+        incident_time:
+          type: string
+          format: time
+          nullable: true
+        severity_level:
+          $ref: '#/components/schemas/SeverityLevelEnum'
+        actions_taken:
+          type: string
+        follow_up_required:
+          type: boolean
+        follow_up_date:
+          type: string
+          format: date
+          nullable: true
+        reported_by:
+          type: integer
+          readOnly: true
+        reported_by_name:
+          type: string
+          readOnly: true
+        notify_parents:
+          type: boolean
+        is_public:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - description
+      - id
+      - incident_date
+      - report_type
+      - reported_by
+      - reported_by_name
+      - student
+      - student_name
+      - title
+    BehaviorReportRequest:
+      type: object
+      description: Serializer for behavior reports
+      properties:
+        student:
+          type: string
+          format: uuid
+        report_type:
+          $ref: '#/components/schemas/ReportTypeEnum'
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          minLength: 1
+        location:
+          type: string
+          maxLength: 100
+        incident_date:
+          type: string
+          format: date
+        incident_time:
+          type: string
+          format: time
+          nullable: true
+        severity_level:
+          $ref: '#/components/schemas/SeverityLevelEnum'
+        actions_taken:
+          type: string
+        follow_up_required:
+          type: boolean
+        follow_up_date:
+          type: string
+          format: date
+          nullable: true
+        notify_parents:
+          type: boolean
+        is_public:
+          type: boolean
+      required:
+      - description
+      - incident_date
+      - report_type
+      - student
+      - title
+    BlankEnum:
+      enum:
+      - ''
+    BloodGroupEnum:
+      enum:
+      - A+
+      - A-
+      - B+
+      - B-
+      - AB+
+      - AB-
+      - O+
+      - O-
+      type: string
+      description: |-
+        * `A+` - A+
+        * `A-` - A-
+        * `B+` - B+
+        * `B-` - B-
+        * `AB+` - AB+
+        * `AB-` - AB-
+        * `O+` - O+
+        * `O-` - O-
+    CurrentSemesterEnum:
+      enum:
+      - first
+      - second
+      - summer
+      type: string
+      description: |-
+        * `first` - First Semester
+        * `second` - Second Semester
+        * `summer` - Summer Session
+    FileTypeEnum:
+      enum:
+      - transcript
+      - behavior_report
+      - payment_receipt
+      - student_document
+      - other
+      type: string
+      description: |-
+        * `transcript` - Academic Transcript
+        * `behavior_report` - Behavior Report
+        * `payment_receipt` - Payment Receipt
+        * `student_document` - Student Document
+        * `other` - Other
+    FileUpload:
+      type: object
+      description: Serializer for file uploads
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        original_name:
+          type: string
+          maxLength: 255
+        firebase_url:
+          type: string
+          format: uri
+          readOnly: true
+          nullable: true
+        file_size_mb:
+          type: string
+          readOnly: true
+        content_type:
+          type: string
+          nullable: true
+          maxLength: 100
+        file_type:
+          $ref: '#/components/schemas/FileTypeEnum'
+        description:
+          type: string
+        tags:
+          type: string
+          readOnly: true
+          description: Comma-separated tags
+        is_public:
+          type: boolean
+        uploaded_by:
+          type: integer
+          readOnly: true
+        uploaded_by_name:
+          type: string
+          readOnly: true
+        school_name:
+          type: string
+          readOnly: true
+        uploaded_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - file_size_mb
+      - file_type
+      - firebase_url
+      - id
+      - original_name
+      - school_name
+      - tags
+      - uploaded_at
+      - uploaded_by
+      - uploaded_by_name
+    FileUploadRequest:
+      type: object
+      description: Serializer for file uploads
+      properties:
+        original_name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        content_type:
+          type: string
+          nullable: true
+          maxLength: 100
+        file_type:
+          $ref: '#/components/schemas/FileTypeEnum'
+        description:
+          type: string
+        is_public:
+          type: boolean
+      required:
+      - file_type
+      - original_name
+    GenderEnum:
+      enum:
+      - male
+      - female
+      - other
+      type: string
+      description: |-
+        * `male` - Male
+        * `female` - Female
+        * `other` - Other
+    LanguagePreferenceEnum:
+      enum:
+      - en
+      - fr
+      - ha
+      type: string
+      description: |-
+        * `en` - English
+        * `fr` - French
+        * `ha` - Hausa
+    Notification:
+      type: object
+      description: Serializer for notifications - READ ONLY
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        body:
+          type: string
+          readOnly: true
+        notification_type:
+          allOf:
+          - $ref: '#/components/schemas/NotificationTypeEnum'
+          readOnly: true
+        school:
+          type: string
+          format: uuid
+          readOnly: true
+        school_name:
+          type: string
+          readOnly: true
+        target_user_ids:
+          type: string
+          readOnly: true
+        sent_via_fcm:
+          type: boolean
+          readOnly: true
+        sent_via_email:
+          type: boolean
+          readOnly: true
+        sent_via_sms:
+          type: boolean
+          readOnly: true
+        data:
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        sent_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - body
+      - created_at
+      - data
+      - id
+      - notification_type
+      - school
+      - school_name
+      - sent_at
+      - sent_via_email
+      - sent_via_fcm
+      - sent_via_sms
+      - target_user_ids
+      - title
+    NotificationCreateRequest:
+      type: object
+      description: Serializer for creating notifications - WRITE ONLY
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        body:
+          type: string
+          minLength: 1
+        notification_type:
+          $ref: '#/components/schemas/NotificationTypeEnum'
+        school:
+          type: string
+          format: uuid
+          description: School ID (optional - will use user's school if not provided)
+        data: {}
+      required:
+      - body
+      - notification_type
+      - title
+    NotificationDelivery:
+      type: object
+      description: Serializer for notification delivery tracking
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        notification:
+          type: string
+          format: uuid
+        notification_title:
+          type: string
+          readOnly: true
+        user:
+          type: integer
+        user_name:
+          type: string
+          readOnly: true
+        delivered_via_fcm:
+          type: boolean
+        delivered_via_email:
+          type: boolean
+        delivered_via_sms:
+          type: boolean
+        fcm_message_id:
+          type: string
+          readOnly: true
+        fcm_error:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        delivered_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        read_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - created_at
+      - delivered_at
+      - fcm_error
+      - fcm_message_id
+      - id
+      - notification
+      - notification_title
+      - user
+      - user_name
+    NotificationTypeEnum:
+      enum:
+      - academic
+      - behavior
+      - payment
+      - general
+      type: string
+      description: |-
+        * `academic` - Academic Update
+        * `behavior` - Behavior Report
+        * `payment` - Payment Reminder
+        * `general` - General Announcement
+    NotificationUpdate:
+      type: object
+      description: Serializer for updating notifications
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        body:
+          type: string
+        notification_type:
+          $ref: '#/components/schemas/NotificationTypeEnum'
+        target_user_ids:
+          type: string
+          readOnly: true
+        school:
+          type: string
+          format: uuid
+          readOnly: true
+          description: School ID (admin users can change, school users cannot)
+        data: {}
+      required:
+      - body
+      - notification_type
+      - school
+      - target_user_ids
+      - title
+    NotificationUpdateRequest:
+      type: object
+      description: Serializer for updating notifications
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        body:
+          type: string
+          minLength: 1
+        notification_type:
+          $ref: '#/components/schemas/NotificationTypeEnum'
+        data: {}
+      required:
+      - body
+      - notification_type
+      - title
+    PaginatedBehaviorReportList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BehaviorReport'
+    PaginatedFileUploadList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/FileUpload'
+    PaginatedNotificationDeliveryList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationDelivery'
+    PaginatedNotificationList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notification'
+    PaginatedParentStudentList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ParentStudent'
+    PaginatedPaymentRecordList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentRecord'
+    PaginatedSchoolListList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SchoolList'
+    PaginatedStudentListList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/StudentList'
+    PaginatedTaskResultList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskResult'
+    PaginatedTranscriptList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transcript'
+    ParentStudent:
+      type: object
+      description: Serializer for parent-student relationships
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        parent:
+          type: integer
+        parent_name:
+          type: string
+          readOnly: true
+        student:
+          type: string
+          format: uuid
+        student_name:
+          type: string
+          readOnly: true
+        relationship:
+          $ref: '#/components/schemas/RelationshipEnum'
+        is_primary:
+          type: boolean
+          description: Primary contact for school communications
+        is_emergency_contact:
+          type: boolean
+          description: Emergency contact for the student
+        receive_sms:
+          type: boolean
+        receive_email:
+          type: boolean
+        receive_push:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - parent
+      - parent_name
+      - relationship
+      - student
+      - student_name
+    ParentStudentRequest:
+      type: object
+      description: Serializer for parent-student relationships
+      properties:
+        parent:
+          type: integer
+        student:
+          type: string
+          format: uuid
+        relationship:
+          $ref: '#/components/schemas/RelationshipEnum'
+        is_primary:
+          type: boolean
+          description: Primary contact for school communications
+        is_emergency_contact:
+          type: boolean
+          description: Emergency contact for the student
+        receive_sms:
+          type: boolean
+        receive_email:
+          type: boolean
+        receive_push:
+          type: boolean
+      required:
+      - parent
+      - relationship
+      - student
+    PatchedBehaviorReportRequest:
+      type: object
+      description: Serializer for behavior reports
+      properties:
+        student:
+          type: string
+          format: uuid
+        report_type:
+          $ref: '#/components/schemas/ReportTypeEnum'
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          minLength: 1
+        location:
+          type: string
+          maxLength: 100
+        incident_date:
+          type: string
+          format: date
+        incident_time:
+          type: string
+          format: time
+          nullable: true
+        severity_level:
+          $ref: '#/components/schemas/SeverityLevelEnum'
+        actions_taken:
+          type: string
+        follow_up_required:
+          type: boolean
+        follow_up_date:
+          type: string
+          format: date
+          nullable: true
+        notify_parents:
+          type: boolean
+        is_public:
+          type: boolean
+    PatchedFileUploadRequest:
+      type: object
+      description: Serializer for file uploads
+      properties:
+        original_name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        content_type:
+          type: string
+          nullable: true
+          maxLength: 100
+        file_type:
+          $ref: '#/components/schemas/FileTypeEnum'
+        description:
+          type: string
+        is_public:
+          type: boolean
+    PatchedNotificationUpdateRequest:
+      type: object
+      description: Serializer for updating notifications
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        body:
+          type: string
+          minLength: 1
+        notification_type:
+          $ref: '#/components/schemas/NotificationTypeEnum'
+        data: {}
+    PatchedParentStudentRequest:
+      type: object
+      description: Serializer for parent-student relationships
+      properties:
+        parent:
+          type: integer
+        student:
+          type: string
+          format: uuid
+        relationship:
+          $ref: '#/components/schemas/RelationshipEnum'
+        is_primary:
+          type: boolean
+          description: Primary contact for school communications
+        is_emergency_contact:
+          type: boolean
+          description: Emergency contact for the student
+        receive_sms:
+          type: boolean
+        receive_email:
+          type: boolean
+        receive_push:
+          type: boolean
+    PatchedPaymentRecordRequest:
+      type: object
+      description: Serializer for payment records
+      properties:
+        student:
+          type: string
+          format: uuid
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          description: Payment amount
+        currency:
+          type: string
+          minLength: 1
+          maxLength: 3
+        payment_type:
+          $ref: '#/components/schemas/PaymentTypeEnum'
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        due_date:
+          type: string
+          format: date
+        paid_date:
+          type: string
+          format: date
+          nullable: true
+        payment_method:
+          oneOf:
+          - $ref: '#/components/schemas/PaymentMethodEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        reference_number:
+          type: string
+          maxLength: 100
+        receipt_url:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+        notes:
+          type: string
+        created_by:
+          type: integer
+    PatchedSchoolDetailRequest:
+      type: object
+      description: Serializer for school detail view (all fields)
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: Full school name
+          maxLength: 200
+        school_type:
+          $ref: '#/components/schemas/SchoolTypeEnum'
+        academic_year:
+          type: string
+          minLength: 1
+          description: Current academic year
+          maxLength: 20
+        logo:
+          type: string
+          format: uri
+          nullable: true
+          description: Firebase Storage URL for school logo
+          maxLength: 200
+        primary_color:
+          type: string
+          minLength: 1
+          description: 'Primary brand color in hex format (e.g., #1976D2)'
+          maxLength: 7
+        secondary_color:
+          type: string
+          minLength: 1
+          description: Secondary brand color in hex format
+          maxLength: 7
+        contact_email:
+          type: string
+          format: email
+          minLength: 1
+          description: Primary contact email
+          maxLength: 254
+        contact_phone:
+          type: string
+          minLength: 1
+          description: Primary contact phone number
+          pattern: ^\+?1?\d{8,15}$
+          maxLength: 20
+        website:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+        address:
+          type: string
+          minLength: 1
+          description: Full school address
+        city:
+          type: string
+          minLength: 1
+          maxLength: 100
+        state:
+          type: string
+          minLength: 1
+          maxLength: 100
+        country:
+          type: string
+          minLength: 1
+          maxLength: 100
+        postal_code:
+          type: string
+          maxLength: 20
+        is_active:
+          type: boolean
+        is_verified:
+          type: boolean
+    PatchedSchoolUpdateRequest:
+      type: object
+      description: Serializer for updating schools
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: Full school name
+          maxLength: 200
+        school_type:
+          $ref: '#/components/schemas/SchoolTypeEnum'
+        academic_year:
+          type: string
+          minLength: 1
+          description: Current academic year
+          maxLength: 20
+        logo:
+          type: string
+          format: uri
+          nullable: true
+          description: Firebase Storage URL for school logo
+          maxLength: 200
+        primary_color:
+          type: string
+          minLength: 1
+          description: 'Primary brand color in hex format (e.g., #1976D2)'
+          maxLength: 7
+        secondary_color:
+          type: string
+          minLength: 1
+          description: Secondary brand color in hex format
+          maxLength: 7
+        contact_email:
+          type: string
+          format: email
+          minLength: 1
+          description: Primary contact email
+          maxLength: 254
+        contact_phone:
+          type: string
+          minLength: 1
+          description: Primary contact phone number
+          pattern: ^\+?1?\d{8,15}$
+          maxLength: 20
+        website:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+        address:
+          type: string
+          minLength: 1
+          description: Full school address
+        city:
+          type: string
+          minLength: 1
+          maxLength: 100
+        state:
+          type: string
+          minLength: 1
+          maxLength: 100
+        country:
+          type: string
+          minLength: 1
+          maxLength: 100
+        postal_code:
+          type: string
+          maxLength: 20
+        is_active:
+          type: boolean
+        is_verified:
+          type: boolean
+        configuration:
+          $ref: '#/components/schemas/SchoolConfigurationRequest'
+    PatchedStudentUpdateRequest:
+      type: object
+      description: Serializer for updating students
+      properties:
+        first_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        last_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        middle_name:
+          type: string
+          maxLength: 100
+        student_id:
+          type: string
+          minLength: 1
+          description: School-specific student identification number
+          maxLength: 50
+        class_level:
+          type: string
+          minLength: 1
+          description: Current class/grade level (e.g., 'Class 6A', 'Grade 10')
+          maxLength: 50
+        section:
+          type: string
+          description: Class section (e.g., 'A', 'B', 'Science')
+          maxLength: 20
+        date_of_birth:
+          type: string
+          format: date
+        gender:
+          $ref: '#/components/schemas/GenderEnum'
+        email:
+          type: string
+          format: email
+          nullable: true
+          maxLength: 254
+        phone:
+          type: string
+          pattern: ^\+?1?\d{8,15}$
+          maxLength: 20
+        address:
+          type: string
+        city:
+          type: string
+          maxLength: 100
+        state:
+          type: string
+          maxLength: 100
+        blood_group:
+          oneOf:
+          - $ref: '#/components/schemas/BloodGroupEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        emergency_contact:
+          type: string
+          maxLength: 20
+        medical_conditions:
+          type: string
+        enrollment_date:
+          type: string
+          format: date
+        graduation_date:
+          type: string
+          format: date
+          nullable: true
+        is_active:
+          type: boolean
+        is_graduated:
+          type: boolean
+        profile_picture:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+    PatchedTranscriptRequest:
+      type: object
+      description: Serializer for academic transcripts
+      properties:
+        student:
+          type: string
+          format: uuid
+        academic_year:
+          type: string
+          minLength: 1
+          maxLength: 20
+        semester:
+          $ref: '#/components/schemas/SemesterEnum'
+        file_url:
+          type: string
+          format: uri
+          minLength: 1
+          description: Firebase Storage URL
+          maxLength: 200
+        file_name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        file_size:
+          type: integer
+          description: File size in bytes
+        gpa:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,1}(?:\.\d{0,2})?$
+          nullable: true
+          description: Grade Point Average
+        total_credits:
+          type: integer
+          nullable: true
+        rank_in_class:
+          type: integer
+          nullable: true
+        class_size:
+          type: integer
+          nullable: true
+        uploaded_by:
+          type: integer
+        is_public:
+          type: boolean
+          description: Visible to parents
+    PatchedUserRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        user_type:
+          $ref: '#/components/schemas/UserTypeEnum'
+        school:
+          type: string
+          format: uuid
+          nullable: true
+        phone:
+          type: string
+          description: Phone number for SMS notifications
+          pattern: ^\+?1?\d{8,15}$
+          maxLength: 17
+        profile_picture:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+    PaymentMethodEnum:
+      enum:
+      - cash
+      - bank_transfer
+      - card
+      - mobile_money
+      - check
+      - other
+      type: string
+      description: |-
+        * `cash` - Cash
+        * `bank_transfer` - Bank Transfer
+        * `card` - Credit/Debit Card
+        * `mobile_money` - Mobile Money
+        * `check` - Check
+        * `other` - Other
+    PaymentRecord:
+      type: object
+      description: Serializer for payment records
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        student:
+          type: string
+          format: uuid
+        student_name:
+          type: string
+          readOnly: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          description: Payment amount
+        currency:
+          type: string
+          maxLength: 3
+        payment_type:
+          $ref: '#/components/schemas/PaymentTypeEnum'
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        due_date:
+          type: string
+          format: date
+        paid_date:
+          type: string
+          format: date
+          nullable: true
+        payment_method:
+          oneOf:
+          - $ref: '#/components/schemas/PaymentMethodEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        reference_number:
+          type: string
+          maxLength: 100
+        receipt_url:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+        notes:
+          type: string
+        created_by:
+          type: integer
+        created_by_name:
+          type: string
+          readOnly: true
+        days_overdue:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - amount
+      - created_at
+      - created_by
+      - created_by_name
+      - days_overdue
+      - due_date
+      - id
+      - payment_type
+      - student
+      - student_name
+    PaymentRecordRequest:
+      type: object
+      description: Serializer for payment records
+      properties:
+        student:
+          type: string
+          format: uuid
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          description: Payment amount
+        currency:
+          type: string
+          minLength: 1
+          maxLength: 3
+        payment_type:
+          $ref: '#/components/schemas/PaymentTypeEnum'
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        due_date:
+          type: string
+          format: date
+        paid_date:
+          type: string
+          format: date
+          nullable: true
+        payment_method:
+          oneOf:
+          - $ref: '#/components/schemas/PaymentMethodEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        reference_number:
+          type: string
+          maxLength: 100
+        receipt_url:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+        notes:
+          type: string
+        created_by:
+          type: integer
+      required:
+      - amount
+      - created_by
+      - due_date
+      - payment_type
+      - student
+    PaymentTypeEnum:
+      enum:
+      - tuition
+      - library
+      - laboratory
+      - sports
+      - transport
+      - meal
+      - uniform
+      - examination
+      - other
+      type: string
+      description: |-
+        * `tuition` - Tuition Fee
+        * `library` - Library Fee
+        * `laboratory` - Laboratory Fee
+        * `sports` - Sports Fee
+        * `transport` - Transport Fee
+        * `meal` - Meal Fee
+        * `uniform` - Uniform Fee
+        * `examination` - Examination Fee
+        * `other` - Other
+    RelationshipEnum:
+      enum:
+      - father
+      - mother
+      - guardian
+      - grandfather
+      - grandmother
+      - uncle
+      - aunt
+      - other
+      type: string
+      description: |-
+        * `father` - Father
+        * `mother` - Mother
+        * `guardian` - Guardian
+        * `grandfather` - Grandfather
+        * `grandmother` - Grandmother
+        * `uncle` - Uncle
+        * `aunt` - Aunt
+        * `other` - Other
+    ReportTypeEnum:
+      enum:
+      - positive
+      - negative
+      - neutral
+      - achievement
+      - discipline
+      type: string
+      description: |-
+        * `positive` - Positive Behavior
+        * `negative` - Negative Behavior
+        * `neutral` - General Observation
+        * `achievement` - Achievement
+        * `discipline` - Disciplinary Action
+    SchoolConfiguration:
+      type: object
+      description: |-
+        Serializer for school configuration settings.
+
+        **Configuration Fields:**
+        - `academic_year_start`: Start date of academic year (YYYY-MM-DD)
+        - `academic_year_end`: End date of academic year (YYYY-MM-DD)
+        - `current_semester`: Current semester (first, second, summer)
+        - `enable_sms_notifications`: Enable SMS notifications (boolean)
+        - `enable_email_notifications`: Enable email notifications (boolean)
+        - `enable_push_notifications`: Enable push notifications (boolean)
+        - `currency`: Currency code (e.g., NGN, USD, EUR)
+        - `payment_reminder_days`: Days before payment reminder (integer)
+        - `max_file_size_mb`: Maximum file size in MB (integer)
+        - `allowed_file_types`: List of allowed file extensions (array)
+      properties:
+        academic_year_start:
+          type: string
+          format: date
+          description: Start date of academic year
+        academic_year_end:
+          type: string
+          format: date
+          description: End date of academic year
+        current_semester:
+          $ref: '#/components/schemas/CurrentSemesterEnum'
+        enable_sms_notifications:
+          type: boolean
+        enable_email_notifications:
+          type: boolean
+        enable_push_notifications:
+          type: boolean
+        currency:
+          type: string
+          maxLength: 3
+        payment_reminder_days:
+          type: integer
+        max_file_size_mb:
+          type: integer
+        allowed_file_types:
+          description: List of allowed file extensions
+      required:
+      - academic_year_end
+      - academic_year_start
+    SchoolConfigurationRequest:
+      type: object
+      description: |-
+        Serializer for school configuration settings.
+
+        **Configuration Fields:**
+        - `academic_year_start`: Start date of academic year (YYYY-MM-DD)
+        - `academic_year_end`: End date of academic year (YYYY-MM-DD)
+        - `current_semester`: Current semester (first, second, summer)
+        - `enable_sms_notifications`: Enable SMS notifications (boolean)
+        - `enable_email_notifications`: Enable email notifications (boolean)
+        - `enable_push_notifications`: Enable push notifications (boolean)
+        - `currency`: Currency code (e.g., NGN, USD, EUR)
+        - `payment_reminder_days`: Days before payment reminder (integer)
+        - `max_file_size_mb`: Maximum file size in MB (integer)
+        - `allowed_file_types`: List of allowed file extensions (array)
+      properties:
+        academic_year_start:
+          type: string
+          format: date
+          description: Start date of academic year
+        academic_year_end:
+          type: string
+          format: date
+          description: End date of academic year
+        current_semester:
+          $ref: '#/components/schemas/CurrentSemesterEnum'
+        enable_sms_notifications:
+          type: boolean
+        enable_email_notifications:
+          type: boolean
+        enable_push_notifications:
+          type: boolean
+        currency:
+          type: string
+          minLength: 1
+          maxLength: 3
+        payment_reminder_days:
+          type: integer
+        max_file_size_mb:
+          type: integer
+        allowed_file_types:
+          description: List of allowed file extensions
+      required:
+      - academic_year_end
+      - academic_year_start
+    SchoolCreate:
+      type: object
+      description: Serializer for creating new schools
+      properties:
+        name:
+          type: string
+          description: Full school name
+          maxLength: 200
+        school_type:
+          $ref: '#/components/schemas/SchoolTypeEnum'
+        academic_year:
+          type: string
+          description: Current academic year
+          maxLength: 20
+        logo:
+          type: string
+          format: uri
+          nullable: true
+          description: Firebase Storage URL for school logo
+          maxLength: 200
+        primary_color:
+          type: string
+          description: 'Primary brand color in hex format (e.g., #1976D2)'
+          maxLength: 7
+        secondary_color:
+          type: string
+          description: Secondary brand color in hex format
+          maxLength: 7
+        contact_email:
+          type: string
+          format: email
+          description: Primary contact email
+          maxLength: 254
+        contact_phone:
+          type: string
+          description: Primary contact phone number
+          pattern: ^\+?1?\d{8,15}$
+          maxLength: 20
+        website:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+        address:
+          type: string
+          description: Full school address
+        city:
+          type: string
+          maxLength: 100
+        state:
+          type: string
+          maxLength: 100
+        country:
+          type: string
+          maxLength: 100
+        postal_code:
+          type: string
+          maxLength: 20
+        configuration:
+          $ref: '#/components/schemas/SchoolConfiguration'
+      required:
+      - address
+      - city
+      - contact_email
+      - contact_phone
+      - name
+      - state
+    SchoolCreateRequest:
+      type: object
+      description: Serializer for creating new schools
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: Full school name
+          maxLength: 200
+        school_type:
+          $ref: '#/components/schemas/SchoolTypeEnum'
+        academic_year:
+          type: string
+          minLength: 1
+          description: Current academic year
+          maxLength: 20
+        logo:
+          type: string
+          format: uri
+          nullable: true
+          description: Firebase Storage URL for school logo
+          maxLength: 200
+        primary_color:
+          type: string
+          minLength: 1
+          description: 'Primary brand color in hex format (e.g., #1976D2)'
+          maxLength: 7
+        secondary_color:
+          type: string
+          minLength: 1
+          description: Secondary brand color in hex format
+          maxLength: 7
+        contact_email:
+          type: string
+          format: email
+          minLength: 1
+          description: Primary contact email
+          maxLength: 254
+        contact_phone:
+          type: string
+          minLength: 1
+          description: Primary contact phone number
+          pattern: ^\+?1?\d{8,15}$
+          maxLength: 20
+        website:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+        address:
+          type: string
+          minLength: 1
+          description: Full school address
+        city:
+          type: string
+          minLength: 1
+          maxLength: 100
+        state:
+          type: string
+          minLength: 1
+          maxLength: 100
+        country:
+          type: string
+          minLength: 1
+          maxLength: 100
+        postal_code:
+          type: string
+          maxLength: 20
+        configuration:
+          $ref: '#/components/schemas/SchoolConfigurationRequest'
+      required:
+      - address
+      - city
+      - contact_email
+      - contact_phone
+      - name
+      - state
+    SchoolDetail:
+      type: object
+      description: Serializer for school detail view (all fields)
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          description: Full school name
+          maxLength: 200
+        slug:
+          type: string
+          readOnly: true
+          description: URL-friendly identifier for the school
+          pattern: ^[-a-zA-Z0-9_]+$
+        school_type:
+          $ref: '#/components/schemas/SchoolTypeEnum'
+        academic_year:
+          type: string
+          description: Current academic year
+          maxLength: 20
+        logo:
+          type: string
+          format: uri
+          nullable: true
+          description: Firebase Storage URL for school logo
+          maxLength: 200
+        primary_color:
+          type: string
+          description: 'Primary brand color in hex format (e.g., #1976D2)'
+          maxLength: 7
+        secondary_color:
+          type: string
+          description: Secondary brand color in hex format
+          maxLength: 7
+        contact_email:
+          type: string
+          format: email
+          description: Primary contact email
+          maxLength: 254
+        contact_phone:
+          type: string
+          description: Primary contact phone number
+          pattern: ^\+?1?\d{8,15}$
+          maxLength: 20
+        website:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+        address:
+          type: string
+          description: Full school address
+        city:
+          type: string
+          maxLength: 100
+        state:
+          type: string
+          maxLength: 100
+        country:
+          type: string
+          maxLength: 100
+        postal_code:
+          type: string
+          maxLength: 20
+        is_active:
+          type: boolean
+        is_verified:
+          type: boolean
+        configuration:
+          allOf:
+          - $ref: '#/components/schemas/SchoolConfiguration'
+          readOnly: true
+        student_count:
+          type: integer
+          readOnly: true
+        staff_count:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - address
+      - city
+      - configuration
+      - contact_email
+      - contact_phone
+      - created_at
+      - id
+      - name
+      - slug
+      - staff_count
+      - state
+      - student_count
+      - updated_at
+    SchoolDetailRequest:
+      type: object
+      description: Serializer for school detail view (all fields)
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: Full school name
+          maxLength: 200
+        school_type:
+          $ref: '#/components/schemas/SchoolTypeEnum'
+        academic_year:
+          type: string
+          minLength: 1
+          description: Current academic year
+          maxLength: 20
+        logo:
+          type: string
+          format: uri
+          nullable: true
+          description: Firebase Storage URL for school logo
+          maxLength: 200
+        primary_color:
+          type: string
+          minLength: 1
+          description: 'Primary brand color in hex format (e.g., #1976D2)'
+          maxLength: 7
+        secondary_color:
+          type: string
+          minLength: 1
+          description: Secondary brand color in hex format
+          maxLength: 7
+        contact_email:
+          type: string
+          format: email
+          minLength: 1
+          description: Primary contact email
+          maxLength: 254
+        contact_phone:
+          type: string
+          minLength: 1
+          description: Primary contact phone number
+          pattern: ^\+?1?\d{8,15}$
+          maxLength: 20
+        website:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+        address:
+          type: string
+          minLength: 1
+          description: Full school address
+        city:
+          type: string
+          minLength: 1
+          maxLength: 100
+        state:
+          type: string
+          minLength: 1
+          maxLength: 100
+        country:
+          type: string
+          minLength: 1
+          maxLength: 100
+        postal_code:
+          type: string
+          maxLength: 20
+        is_active:
+          type: boolean
+        is_verified:
+          type: boolean
+      required:
+      - address
+      - city
+      - contact_email
+      - contact_phone
+      - name
+      - state
+    SchoolList:
+      type: object
+      description: |-
+        Serializer for school list view (limited fields).
+
+        **Fields:**
+        - `id`: Unique school identifier (UUID)
+        - `name`: School name
+        - `slug`: URL-friendly school identifier
+        - `school_type`: Type of school (primary, secondary, both, university, other)
+        - `city`: School city
+        - `state`: School state
+        - `is_active`: Whether school is active
+        - `is_verified`: Whether school is verified
+        - `student_count`: Number of active students (computed)
+        - `staff_count`: Number of active staff (computed)
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          description: Full school name
+          maxLength: 200
+        slug:
+          type: string
+          description: URL-friendly identifier for the school
+          maxLength: 100
+          pattern: ^[-a-zA-Z0-9_]+$
+        school_type:
+          $ref: '#/components/schemas/SchoolTypeEnum'
+        city:
+          type: string
+          maxLength: 100
+        state:
+          type: string
+          maxLength: 100
+        is_active:
+          type: boolean
+        is_verified:
+          type: boolean
+        student_count:
+          type: integer
+          readOnly: true
+        staff_count:
+          type: integer
+          readOnly: true
+      required:
+      - city
+      - id
+      - name
+      - slug
+      - staff_count
+      - state
+      - student_count
+    SchoolTypeEnum:
+      enum:
+      - primary
+      - secondary
+      - both
+      - university
+      - other
+      type: string
+      description: |-
+        * `primary` - Primary School
+        * `secondary` - Secondary School
+        * `both` - Primary & Secondary
+        * `university` - University
+        * `other` - Other
+    SchoolUpdate:
+      type: object
+      description: Serializer for updating schools
+      properties:
+        name:
+          type: string
+          description: Full school name
+          maxLength: 200
+        school_type:
+          $ref: '#/components/schemas/SchoolTypeEnum'
+        academic_year:
+          type: string
+          description: Current academic year
+          maxLength: 20
+        logo:
+          type: string
+          format: uri
+          nullable: true
+          description: Firebase Storage URL for school logo
+          maxLength: 200
+        primary_color:
+          type: string
+          description: 'Primary brand color in hex format (e.g., #1976D2)'
+          maxLength: 7
+        secondary_color:
+          type: string
+          description: Secondary brand color in hex format
+          maxLength: 7
+        contact_email:
+          type: string
+          format: email
+          description: Primary contact email
+          maxLength: 254
+        contact_phone:
+          type: string
+          description: Primary contact phone number
+          pattern: ^\+?1?\d{8,15}$
+          maxLength: 20
+        website:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+        address:
+          type: string
+          description: Full school address
+        city:
+          type: string
+          maxLength: 100
+        state:
+          type: string
+          maxLength: 100
+        country:
+          type: string
+          maxLength: 100
+        postal_code:
+          type: string
+          maxLength: 20
+        is_active:
+          type: boolean
+        is_verified:
+          type: boolean
+        configuration:
+          $ref: '#/components/schemas/SchoolConfiguration'
+      required:
+      - address
+      - city
+      - contact_email
+      - contact_phone
+      - name
+      - state
+    SchoolUpdateRequest:
+      type: object
+      description: Serializer for updating schools
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: Full school name
+          maxLength: 200
+        school_type:
+          $ref: '#/components/schemas/SchoolTypeEnum'
+        academic_year:
+          type: string
+          minLength: 1
+          description: Current academic year
+          maxLength: 20
+        logo:
+          type: string
+          format: uri
+          nullable: true
+          description: Firebase Storage URL for school logo
+          maxLength: 200
+        primary_color:
+          type: string
+          minLength: 1
+          description: 'Primary brand color in hex format (e.g., #1976D2)'
+          maxLength: 7
+        secondary_color:
+          type: string
+          minLength: 1
+          description: Secondary brand color in hex format
+          maxLength: 7
+        contact_email:
+          type: string
+          format: email
+          minLength: 1
+          description: Primary contact email
+          maxLength: 254
+        contact_phone:
+          type: string
+          minLength: 1
+          description: Primary contact phone number
+          pattern: ^\+?1?\d{8,15}$
+          maxLength: 20
+        website:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+        address:
+          type: string
+          minLength: 1
+          description: Full school address
+        city:
+          type: string
+          minLength: 1
+          maxLength: 100
+        state:
+          type: string
+          minLength: 1
+          maxLength: 100
+        country:
+          type: string
+          minLength: 1
+          maxLength: 100
+        postal_code:
+          type: string
+          maxLength: 20
+        is_active:
+          type: boolean
+        is_verified:
+          type: boolean
+        configuration:
+          $ref: '#/components/schemas/SchoolConfigurationRequest'
+      required:
+      - address
+      - city
+      - contact_email
+      - contact_phone
+      - name
+      - state
+    SemesterEnum:
+      enum:
+      - first
+      - second
+      - summer
+      - annual
+      type: string
+      description: |-
+        * `first` - First Semester
+        * `second` - Second Semester
+        * `summer` - Summer Session
+        * `annual` - Annual Report
+    SeverityLevelEnum:
+      enum:
+      - low
+      - medium
+      - high
+      - critical
+      type: string
+      description: |-
+        * `low` - Low
+        * `medium` - Medium
+        * `high` - High
+        * `critical` - Critical
+    StatusEnum:
+      enum:
+      - pending
+      - paid
+      - overdue
+      - cancelled
+      - refunded
+      type: string
+      description: |-
+        * `pending` - Pending
+        * `paid` - Paid
+        * `overdue` - Overdue
+        * `cancelled` - Cancelled
+        * `refunded` - Refunded
+    StudentCreate:
+      type: object
+      description: Serializer for creating students
+      properties:
+        school:
+          type: string
+          format: uuid
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 100
+        middle_name:
+          type: string
+          maxLength: 100
+        student_id:
+          type: string
+          description: School-specific student identification number
+          maxLength: 50
+        class_level:
+          type: string
+          description: Current class/grade level (e.g., 'Class 6A', 'Grade 10')
+          maxLength: 50
+        section:
+          type: string
+          description: Class section (e.g., 'A', 'B', 'Science')
+          maxLength: 20
+        date_of_birth:
+          type: string
+          format: date
+        gender:
+          $ref: '#/components/schemas/GenderEnum'
+        email:
+          type: string
+          format: email
+          nullable: true
+          maxLength: 254
+        phone:
+          type: string
+          pattern: ^\+?1?\d{8,15}$
+          maxLength: 20
+        address:
+          type: string
+        city:
+          type: string
+          maxLength: 100
+        state:
+          type: string
+          maxLength: 100
+        blood_group:
+          oneOf:
+          - $ref: '#/components/schemas/BloodGroupEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        emergency_contact:
+          type: string
+          maxLength: 20
+        medical_conditions:
+          type: string
+        profile_picture:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+      required:
+      - class_level
+      - date_of_birth
+      - first_name
+      - gender
+      - last_name
+      - school
+      - student_id
+    StudentCreateRequest:
+      type: object
+      description: Serializer for creating students
+      properties:
+        school:
+          type: string
+          format: uuid
+        first_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        last_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        middle_name:
+          type: string
+          maxLength: 100
+        student_id:
+          type: string
+          minLength: 1
+          description: School-specific student identification number
+          maxLength: 50
+        class_level:
+          type: string
+          minLength: 1
+          description: Current class/grade level (e.g., 'Class 6A', 'Grade 10')
+          maxLength: 50
+        section:
+          type: string
+          description: Class section (e.g., 'A', 'B', 'Science')
+          maxLength: 20
+        date_of_birth:
+          type: string
+          format: date
+        gender:
+          $ref: '#/components/schemas/GenderEnum'
+        email:
+          type: string
+          format: email
+          nullable: true
+          maxLength: 254
+        phone:
+          type: string
+          pattern: ^\+?1?\d{8,15}$
+          maxLength: 20
+        address:
+          type: string
+        city:
+          type: string
+          maxLength: 100
+        state:
+          type: string
+          maxLength: 100
+        blood_group:
+          oneOf:
+          - $ref: '#/components/schemas/BloodGroupEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        emergency_contact:
+          type: string
+          maxLength: 20
+        medical_conditions:
+          type: string
+        profile_picture:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+      required:
+      - class_level
+      - date_of_birth
+      - first_name
+      - gender
+      - last_name
+      - school
+      - student_id
+    StudentDetail:
+      type: object
+      description: Serializer for student detail view
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 100
+        middle_name:
+          type: string
+          maxLength: 100
+        student_id:
+          type: string
+          description: School-specific student identification number
+          maxLength: 50
+        school:
+          type: string
+          format: uuid
+        school_name:
+          type: string
+          readOnly: true
+        class_level:
+          type: string
+          description: Current class/grade level (e.g., 'Class 6A', 'Grade 10')
+          maxLength: 50
+        section:
+          type: string
+          description: Class section (e.g., 'A', 'B', 'Science')
+          maxLength: 20
+        date_of_birth:
+          type: string
+          format: date
+        age:
+          type: string
+          readOnly: true
+        gender:
+          $ref: '#/components/schemas/GenderEnum'
+        email:
+          type: string
+          format: email
+          nullable: true
+          maxLength: 254
+        phone:
+          type: string
+          pattern: ^\+?1?\d{8,15}$
+          maxLength: 20
+        address:
+          type: string
+        city:
+          type: string
+          maxLength: 100
+        state:
+          type: string
+          maxLength: 100
+        blood_group:
+          oneOf:
+          - $ref: '#/components/schemas/BloodGroupEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        emergency_contact:
+          type: string
+          maxLength: 20
+        medical_conditions:
+          type: string
+        enrollment_date:
+          type: string
+          format: date
+        graduation_date:
+          type: string
+          format: date
+          nullable: true
+        is_active:
+          type: boolean
+        is_graduated:
+          type: boolean
+        profile_picture:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+        parents:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - age
+      - class_level
+      - created_at
+      - date_of_birth
+      - first_name
+      - gender
+      - id
+      - last_name
+      - parents
+      - school
+      - school_name
+      - student_id
+      - updated_at
+    StudentList:
+      type: object
+      description: Serializer for student list view
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 100
+        student_id:
+          type: string
+          description: School-specific student identification number
+          maxLength: 50
+        school:
+          type: string
+          format: uuid
+        school_name:
+          type: string
+          readOnly: true
+        class_level:
+          type: string
+          description: Current class/grade level (e.g., 'Class 6A', 'Grade 10')
+          maxLength: 50
+        section:
+          type: string
+          description: Class section (e.g., 'A', 'B', 'Science')
+          maxLength: 20
+        gender:
+          $ref: '#/components/schemas/GenderEnum'
+        is_active:
+          type: boolean
+        enrollment_date:
+          type: string
+          format: date
+        primary_parent:
+          type: string
+          readOnly: true
+      required:
+      - class_level
+      - first_name
+      - gender
+      - id
+      - last_name
+      - primary_parent
+      - school
+      - school_name
+      - student_id
+    StudentUpdate:
+      type: object
+      description: Serializer for updating students
+      properties:
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 100
+        middle_name:
+          type: string
+          maxLength: 100
+        student_id:
+          type: string
+          description: School-specific student identification number
+          maxLength: 50
+        class_level:
+          type: string
+          description: Current class/grade level (e.g., 'Class 6A', 'Grade 10')
+          maxLength: 50
+        section:
+          type: string
+          description: Class section (e.g., 'A', 'B', 'Science')
+          maxLength: 20
+        date_of_birth:
+          type: string
+          format: date
+        gender:
+          $ref: '#/components/schemas/GenderEnum'
+        email:
+          type: string
+          format: email
+          nullable: true
+          maxLength: 254
+        phone:
+          type: string
+          pattern: ^\+?1?\d{8,15}$
+          maxLength: 20
+        address:
+          type: string
+        city:
+          type: string
+          maxLength: 100
+        state:
+          type: string
+          maxLength: 100
+        blood_group:
+          oneOf:
+          - $ref: '#/components/schemas/BloodGroupEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        emergency_contact:
+          type: string
+          maxLength: 20
+        medical_conditions:
+          type: string
+        enrollment_date:
+          type: string
+          format: date
+        graduation_date:
+          type: string
+          format: date
+          nullable: true
+        is_active:
+          type: boolean
+        is_graduated:
+          type: boolean
+        profile_picture:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+      required:
+      - class_level
+      - date_of_birth
+      - first_name
+      - gender
+      - last_name
+      - student_id
+    StudentUpdateRequest:
+      type: object
+      description: Serializer for updating students
+      properties:
+        first_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        last_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        middle_name:
+          type: string
+          maxLength: 100
+        student_id:
+          type: string
+          minLength: 1
+          description: School-specific student identification number
+          maxLength: 50
+        class_level:
+          type: string
+          minLength: 1
+          description: Current class/grade level (e.g., 'Class 6A', 'Grade 10')
+          maxLength: 50
+        section:
+          type: string
+          description: Class section (e.g., 'A', 'B', 'Science')
+          maxLength: 20
+        date_of_birth:
+          type: string
+          format: date
+        gender:
+          $ref: '#/components/schemas/GenderEnum'
+        email:
+          type: string
+          format: email
+          nullable: true
+          maxLength: 254
+        phone:
+          type: string
+          pattern: ^\+?1?\d{8,15}$
+          maxLength: 20
+        address:
+          type: string
+        city:
+          type: string
+          maxLength: 100
+        state:
+          type: string
+          maxLength: 100
+        blood_group:
+          oneOf:
+          - $ref: '#/components/schemas/BloodGroupEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        emergency_contact:
+          type: string
+          maxLength: 20
+        medical_conditions:
+          type: string
+        enrollment_date:
+          type: string
+          format: date
+        graduation_date:
+          type: string
+          format: date
+          nullable: true
+        is_active:
+          type: boolean
+        is_graduated:
+          type: boolean
+        profile_picture:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+      required:
+      - class_level
+      - date_of_birth
+      - first_name
+      - gender
+      - last_name
+      - student_id
+    TaskResult:
+      type: object
+      description: Serializer for TaskResult model
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        task_id:
+          type: string
+          readOnly: true
+          description: Celery ID for the Task that was run
+        periodic_task_name:
+          type: string
+          readOnly: true
+          nullable: true
+          description: Name of the Periodic Task which was run
+        task_name:
+          type: string
+          readOnly: true
+          nullable: true
+          description: Name of the Task which was run
+        task_args:
+          type: string
+          readOnly: true
+          nullable: true
+          title: Task Positional Arguments
+          description: JSON representation of the positional arguments used with the
+            task
+        task_kwargs:
+          type: string
+          readOnly: true
+          nullable: true
+          title: Task Named Arguments
+          description: JSON representation of the named arguments used with the task
+        status:
+          type: string
+          readOnly: true
+          title: Task State
+          description: Current state of the task being run
+        worker:
+          type: string
+          readOnly: true
+          nullable: true
+          description: Worker that executes the task
+        content_type:
+          type: string
+          readOnly: true
+          title: Result Content Type
+          description: Content type of the result data
+        content_encoding:
+          type: string
+          readOnly: true
+          title: Result Encoding
+          description: The encoding used to save the task result data
+        result:
+          type: string
+          readOnly: true
+          nullable: true
+          title: Result Data
+          description: The data returned by the task.  Use content_encoding and content_type
+            fields to read.
+        date_created:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Created DateTime
+          description: Datetime field when the task result was created in UTC
+        date_started:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Started DateTime
+          description: Datetime field when the task was started in UTC
+        date_done:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Completed DateTime
+          description: Datetime field when the task was completed in UTC
+        traceback:
+          type: string
+          readOnly: true
+          nullable: true
+          description: Text of the traceback if the task generated one
+        meta:
+          type: string
+          readOnly: true
+          nullable: true
+          title: Task Meta Information
+          description: JSON meta information about the task, such as information on
+            child tasks
+      required:
+      - content_encoding
+      - content_type
+      - date_created
+      - date_done
+      - date_started
+      - id
+      - meta
+      - periodic_task_name
+      - result
+      - status
+      - task_args
+      - task_id
+      - task_kwargs
+      - task_name
+      - traceback
+      - worker
+    TokenObtainPair:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          readOnly: true
+      required:
+      - access
+      - refresh
+    TokenObtainPairRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - password
+      - username
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+      required:
+      - refresh
+    Transcript:
+      type: object
+      description: Serializer for academic transcripts
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        student:
+          type: string
+          format: uuid
+        student_name:
+          type: string
+          readOnly: true
+        academic_year:
+          type: string
+          maxLength: 20
+        semester:
+          $ref: '#/components/schemas/SemesterEnum'
+        file_url:
+          type: string
+          format: uri
+          description: Firebase Storage URL
+          maxLength: 200
+        file_name:
+          type: string
+          maxLength: 255
+        file_size:
+          type: integer
+          description: File size in bytes
+        file_size_mb:
+          type: string
+          readOnly: true
+        gpa:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,1}(?:\.\d{0,2})?$
+          nullable: true
+          description: Grade Point Average
+        total_credits:
+          type: integer
+          nullable: true
+        rank_in_class:
+          type: integer
+          nullable: true
+        class_size:
+          type: integer
+          nullable: true
+        uploaded_by:
+          type: integer
+        uploaded_by_name:
+          type: string
+          readOnly: true
+        is_public:
+          type: boolean
+          description: Visible to parents
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - academic_year
+      - created_at
+      - file_name
+      - file_size
+      - file_size_mb
+      - file_url
+      - id
+      - semester
+      - student
+      - student_name
+      - uploaded_by
+      - uploaded_by_name
+    TranscriptRequest:
+      type: object
+      description: Serializer for academic transcripts
+      properties:
+        student:
+          type: string
+          format: uuid
+        academic_year:
+          type: string
+          minLength: 1
+          maxLength: 20
+        semester:
+          $ref: '#/components/schemas/SemesterEnum'
+        file_url:
+          type: string
+          format: uri
+          minLength: 1
+          description: Firebase Storage URL
+          maxLength: 200
+        file_name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        file_size:
+          type: integer
+          description: File size in bytes
+        gpa:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,1}(?:\.\d{0,2})?$
+          nullable: true
+          description: Grade Point Average
+        total_credits:
+          type: integer
+          nullable: true
+        rank_in_class:
+          type: integer
+          nullable: true
+        class_size:
+          type: integer
+          nullable: true
+        uploaded_by:
+          type: integer
+        is_public:
+          type: boolean
+          description: Visible to parents
+      required:
+      - academic_year
+      - file_name
+      - file_size
+      - file_url
+      - semester
+      - student
+      - uploaded_by
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        full_name:
+          type: string
+          readOnly: true
+        user_type:
+          $ref: '#/components/schemas/UserTypeEnum'
+        school:
+          type: string
+          format: uuid
+          nullable: true
+        school_name:
+          type: string
+          readOnly: true
+        phone:
+          type: string
+          description: Phone number for SMS notifications
+          pattern: ^\+?1?\d{8,15}$
+          maxLength: 17
+        profile_picture:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+        is_verified:
+          type: boolean
+          readOnly: true
+        profile:
+          allOf:
+          - $ref: '#/components/schemas/UserProfile'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - full_name
+      - id
+      - is_verified
+      - profile
+      - school_name
+      - updated_at
+      - username
+    UserProfile:
+      type: object
+      properties:
+        address:
+          type: string
+        emergency_contact:
+          type: string
+          maxLength: 17
+        language_preference:
+          $ref: '#/components/schemas/LanguagePreferenceEnum'
+        email_notifications:
+          type: boolean
+        sms_notifications:
+          type: boolean
+        push_notifications:
+          type: boolean
+    UserProfileRequest:
+      type: object
+      properties:
+        address:
+          type: string
+        emergency_contact:
+          type: string
+          maxLength: 17
+        language_preference:
+          $ref: '#/components/schemas/LanguagePreferenceEnum'
+        email_notifications:
+          type: boolean
+        sms_notifications:
+          type: boolean
+        push_notifications:
+          type: boolean
+    UserRegistration:
+      type: object
+      properties:
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        user_type:
+          $ref: '#/components/schemas/UserTypeEnum'
+        school:
+          type: string
+          format: uuid
+          nullable: true
+        phone:
+          type: string
+          description: Phone number for SMS notifications
+          pattern: ^\+?1?\d{8,15}$
+          maxLength: 17
+      required:
+      - username
+    UserRegistrationRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password_confirm:
+          type: string
+          writeOnly: true
+          minLength: 1
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        user_type:
+          $ref: '#/components/schemas/UserTypeEnum'
+        school:
+          type: string
+          format: uuid
+          nullable: true
+        phone:
+          type: string
+          description: Phone number for SMS notifications
+          pattern: ^\+?1?\d{8,15}$
+          maxLength: 17
+      required:
+      - password
+      - password_confirm
+      - username
+    UserRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        user_type:
+          $ref: '#/components/schemas/UserTypeEnum'
+        school:
+          type: string
+          format: uuid
+          nullable: true
+        phone:
+          type: string
+          description: Phone number for SMS notifications
+          pattern: ^\+?1?\d{8,15}$
+          maxLength: 17
+        profile_picture:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+      required:
+      - username
+    UserTypeEnum:
+      enum:
+      - admin
+      - school_staff
+      - parent
+      type: string
+      description: |-
+        * `admin` - System Admin
+        * `school_staff` - School Staff
+        * `parent` - Parent/Guardian
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+tags:
+- name: authentication
+  description: Endpoints d'authentification - Login, register, token management
+- name: schools
+  description: Gestion des écoles - CRUD operations for schools and configuration
+- name: students
+  description: Gestion des étudiants - Student records, transcripts, behavior reports
+- name: parents
+  description: Gestion des parents - Parent accounts, child connections, and notifications
+- name: notifications
+  description: Système de notifications - Push notifications, email, FCM integration
+- name: files
+  description: Gestion des fichiers - File upload, storage, and management with local/Firebase
+    support
+- name: tasks
+  description: Système de tâches - Background task monitoring and management with
+    Celery
+- name: common
+  description: Utilitaires communs - Shared endpoints and utilities
+externalDocs:
+  description: Documentation complète
+  url: https://docs.schoolconnect.ne

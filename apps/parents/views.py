@@ -437,9 +437,25 @@ class ParentDashboardViewSet(viewsets.ViewSet):
         try:
             from apps.notifications.models import Notification, NotificationDelivery
             
+            # Get the parent's school - either from user.school or from student relationships
+            parent_school = request.user.school
+            if not parent_school:
+                # If user.school is not set, get it from their student relationships
+                from apps.students.models import ParentStudent
+                parent_student = ParentStudent.objects.filter(parent=request.user).first()
+                if parent_student:
+                    parent_school = parent_student.student.school
+            
+            if not parent_school:
+                return Response(
+                    {'error': 'Parent is not associated with any school'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Get the notification - must belong to the parent's school
             notification = Notification.objects.get(
                 id=pk,
-                school=request.user.school
+                school=parent_school
             )
             
             # Create or update delivery record
@@ -459,7 +475,7 @@ class ParentDashboardViewSet(viewsets.ViewSet):
             
         except Notification.DoesNotExist:
             return Response(
-                {'error': 'Notification not found'},
+                {'error': 'Notification not found or access denied'},
                 status=status.HTTP_404_NOT_FOUND
             )
         except Exception as e:

@@ -20,12 +20,12 @@ urlpatterns = [
     path('api/auth/', include('apps.authentication.urls')),
     
     # App URLs
-    path('', include('apps.schools.urls')),
-    path('', include('apps.students.urls')),
-    path('', include('apps.parents.urls')),
-    path('', include('apps.files.urls')),
-    path('', include('apps.notifications.urls')),
-    path('', include('apps.tasks.urls')),
+    path('api/', include('apps.schools.urls')),
+    path('api/', include('apps.students.urls')),
+    path('api/', include('apps.parents.urls')),
+    path('api/', include('apps.files.urls')),
+    path('api/', include('apps.notifications.urls')),
+    path('api/', include('apps.tasks.urls')),
 ]
 
 if settings.DEBUG:
