@@ -119,17 +119,16 @@ class TranscriptSerializer(serializers.ModelSerializer):
     """Serializer for academic transcripts"""
     student_name = serializers.CharField(source='student.full_name', read_only=True)
     uploaded_by_name = serializers.CharField(source='uploaded_by.full_name', read_only=True)
-    file_size_mb = serializers.ReadOnlyField()
     
     class Meta:
         model = Transcript
         fields = [
             'id', 'student', 'student_name', 'academic_year', 'semester',
-            'file_url', 'file_name', 'file_size', 'file_size_mb', 'gpa', 'total_credits',
+            'file_url', 'file_name', 'gpa', 'total_credits',
             'rank_in_class', 'class_size', 'uploaded_by', 'uploaded_by_name',
             'is_public', 'created_at'
         ]
-        read_only_fields = ['id', 'file_size_mb', 'created_at']
+        read_only_fields = ['id', 'created_at']
 
 
 class BehaviorReportSerializer(serializers.ModelSerializer):

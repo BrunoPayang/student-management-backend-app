@@ -236,17 +236,16 @@ class Transcript(models.Model):
     semester = models.CharField(
         max_length=20,
         choices=[
-            ('first', 'First Semester'),
-            ('second', 'Second Semester'),
-            ('summer', 'Summer Session'),
-            ('annual', 'Annual Report')
+            ('first', 'Premier Semestre'),
+            ('second', 'Deuxième Semestre'),
+            
+            ('annual', 'Rapport Annuel')
         ]
     )
     
     # File information
     file_url = models.URLField(help_text="Firebase Storage URL")
     file_name = models.CharField(max_length=255)
-    file_size = models.IntegerField(help_text="File size in bytes")
     
     # Academic details
     gpa = models.DecimalField(
@@ -291,10 +290,6 @@ class Transcript(models.Model):
     def __str__(self):
         return f"{self.student.full_name} - {self.academic_year} {self.semester}"
     
-    @property
-    def file_size_mb(self):
-        """Return file size in MB"""
-        return round(self.file_size / (1024 * 1024), 2)
 
 
 class BehaviorReport(models.Model):
