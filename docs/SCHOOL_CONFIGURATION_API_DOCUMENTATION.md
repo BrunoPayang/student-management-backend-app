@@ -475,12 +475,34 @@ Retrieve comprehensive statistics for a school.
 {
   "total_students": 150,
   "class_distribution": [
-    {"class_level": "Grade 1", "count": 25},
-    {"class_level": "Grade 2", "count": 30},
-    {"class_level": "Grade 3", "count": 28},
-    {"class_level": "Grade 4", "count": 32},
-    {"class_level": "Grade 5", "count": 35}
+    {"class_assigned__level": "1", "count": 25},
+    {"class_assigned__level": "2", "count": 30},
+    {"class_assigned__level": "3", "count": 28},
+    {"class_assigned__level": "4", "count": 32},
+    {"class_assigned__level": "5", "count": 35}
   ],
+  "class_details": [
+    {
+      "id": "123e4567-e89b-12d3-a456-426614174000",
+      "name": "Grade 1",
+      "level": "1",
+      "section": "A",
+      "full_name": "Grade 1 - A",
+      "academic_year": "2024-2025",
+      "max_students": 30,
+      "student_count": 25,
+      "available_spots": 5,
+      "is_active": true,
+      "created_at": "2024-01-15T10:30:00Z",
+      "updated_at": "2024-09-04T14:20:00Z"
+    }
+  ],
+  "class_statistics": {
+    "total_classes": 12,
+    "active_classes": 10,
+    "total_capacity": 360,
+    "utilization_rate": 41.67
+  },
   "gender_distribution": [
     {"gender": "M", "count": 78},
     {"gender": "F", "count": 72}

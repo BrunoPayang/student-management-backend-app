@@ -52,8 +52,7 @@ class TestStudentsAPI:
             'last_name': 'Doe',
             'date_of_birth': '2010-01-01',
             'gender': 'male',
-            'class_level': '10',
-            'section': 'A',
+            'class_assigned': None,
             'school': school.id,
             'enrollment_date': '2024-09-01'
         }
@@ -82,8 +81,7 @@ class TestStudentsAPI:
             'last_name': 'Smith',
             'date_of_birth': '2010-02-01',
             'gender': 'female',
-            'class_level': '10',
-            'section': 'B',
+            'class_assigned': None,
             'school': school.id,
             'enrollment_date': '2024-09-01'
         }
@@ -196,16 +194,22 @@ class TestStudentsAPI:
         
         # Create school and students
         school = create_school()
-        create_student(school=school, class_level='10')
-        create_student(school=school, class_level='11')
-        create_student(school=school, class_level='12')
+        # Create classes first
+        from apps.students.models import Class
+        class1 = Class.objects.create(school=school, name='Grade 10', level='10', academic_year='2024-2025')
+        class2 = Class.objects.create(school=school, name='Grade 11', level='11', academic_year='2024-2025')
+        class3 = Class.objects.create(school=school, name='Grade 12', level='12', academic_year='2024-2025')
+        
+        create_student(school=school, class_assigned=class1)
+        create_student(school=school, class_assigned=class2)
+        create_student(school=school, class_assigned=class3)
         
         url = reverse('student-list')  # Fixed: removed namespace
-        response = api_client.get(url, {'class_level': '10'})
+        response = api_client.get(url, {'class_assigned': class1.id})
         
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data['results']) == 1
-        assert response.data['results'][0]['class_level'] == '10'
+        assert response.data['results'][0]['class_assigned'] == str(class1.id)
 
 
 @pytest.mark.django_db
@@ -553,10 +557,10 @@ class TestStudentsValidation:
             'last_name': 'Student',
             'date_of_birth': 'invalid-date',  # Invalid date format
             'gender': 'invalid_gender',  # Invalid gender
-            'class_level': 'invalid_level',  # Invalid class level
+            'class_assigned': 'invalid_id',  # Invalid class ID
             'school': school.id
         }
         
         response = api_client.post(url, data, format='json')
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'date_of_birth' in response.data or 'gender' in response.data or 'class_level' in response.data
+        assert 'date_of_birth' in response.data or 'gender' in response.data or 'class_assigned' in response.data

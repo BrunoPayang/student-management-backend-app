@@ -1,18 +1,141 @@
 from rest_framework import serializers
 from django.core.validators import RegexValidator
-from .models import Student, ParentStudent, Transcript, BehaviorReport, PaymentRecord
+from .models import Class, Student, ParentStudent, Transcript, BehaviorReport, PaymentRecord
+
+
+class ClassListSerializer(serializers.ModelSerializer):
+    """Serializer for class list view"""
+    school_name = serializers.CharField(source='school.name', read_only=True)
+    student_count = serializers.ReadOnlyField()
+    available_spots = serializers.ReadOnlyField()
+    
+    class Meta:
+        model = Class
+        fields = [
+            'id', 'name', 'level', 'section', 'full_name',
+            'school', 'school_name', 'academic_year', 'max_students',
+            'student_count', 'available_spots', 'is_active',
+            'created_at', 'updated_at'
+        ]
+
+
+class ClassDetailSerializer(serializers.ModelSerializer):
+    """Serializer for class detail view"""
+    school_name = serializers.CharField(source='school.name', read_only=True)
+    student_count = serializers.ReadOnlyField()
+    available_spots = serializers.ReadOnlyField()
+    students = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Class
+        fields = [
+            'id', 'name', 'level', 'section', 'full_name', 'description',
+            'school', 'school_name', 'academic_year', 'max_students',
+            'student_count', 'available_spots', 'is_active',
+            'students', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+    
+    def get_students(self, obj):
+        """Get list of students in this class"""
+        students = obj.students.filter(is_active=True)
+        return [{
+            'id': student.id,
+            'name': student.full_name,
+            'student_id': student.student_id,
+            'enrollment_date': student.enrollment_date
+        } for student in students]
+
+
+class ClassCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating classes"""
+    
+    class Meta:
+        model = Class
+        fields = [
+            'name', 'level', 'section', 'description',
+            'academic_year', 'max_students', 'is_active'
+        ]
+    
+    def validate(self, data):
+        """Validate class data"""
+        school = self.context['request'].user.school
+        if not school:
+            raise serializers.ValidationError("L'utilisateur doit être associé à une école.")
+        
+        # Check for duplicate class name within the same school and academic year
+        name = data.get('name')
+        section = data.get('section')
+        academic_year = data.get('academic_year')
+        
+        if Class.objects.filter(
+            school=school,
+            name=name,
+            section=section,
+            academic_year=academic_year
+        ).exists():
+            raise serializers.ValidationError(
+                f"Une classe avec le nom '{name}' et la section '{section}' existe déjà pour l'année académique {academic_year}."
+            )
+        
+        return data
+    
+    def create(self, validated_data):
+        """Create class and assign to user's school"""
+        school = self.context['request'].user.school
+        validated_data['school'] = school
+        return super().create(validated_data)
+
+
+class ClassUpdateSerializer(serializers.ModelSerializer):
+    """Serializer for updating classes"""
+    
+    class Meta:
+        model = Class
+        fields = [
+            'name', 'level', 'section', 'description',
+            'academic_year', 'max_students', 'is_active'
+        ]
+    
+    def validate(self, data):
+        """Validate class update data"""
+        school = self.context['request'].user.school
+        if not school:
+            raise serializers.ValidationError("L'utilisateur doit être associé à une école.")
+        
+        # Check for duplicate class name within the same school and academic year
+        # (excluding current instance)
+        name = data.get('name')
+        section = data.get('section')
+        academic_year = data.get('academic_year')
+        
+        if name and section and academic_year:
+            existing_classes = Class.objects.filter(
+                school=school,
+                name=name,
+                section=section,
+                academic_year=academic_year
+            ).exclude(id=self.instance.id)
+            
+            if existing_classes.exists():
+                raise serializers.ValidationError(
+                    f"Une classe avec le nom '{name}' et la section '{section}' existe déjà pour l'année académique {academic_year}."
+                )
+        
+        return data
 
 
 class StudentListSerializer(serializers.ModelSerializer):
     """Serializer for student list view"""
     school_name = serializers.CharField(source='school.name', read_only=True)
+    class_name = serializers.CharField(source='class_assigned.full_name', read_only=True)
     primary_parent = serializers.SerializerMethodField()
     
     class Meta:
         model = Student
         fields = [
             'id', 'first_name', 'last_name', 'student_id',
-            'school', 'school_name', 'class_level', 'section',
+            'school', 'school_name', 'class_assigned', 'class_name',
             'gender', 'is_active', 'enrollment_date', 'primary_parent'
         ]
     
@@ -30,6 +153,7 @@ class StudentListSerializer(serializers.ModelSerializer):
 class StudentDetailSerializer(serializers.ModelSerializer):
     """Serializer for student detail view"""
     school_name = serializers.CharField(source='school.name', read_only=True)
+    class_name = serializers.CharField(source='class_assigned.full_name', read_only=True)
     parents = serializers.SerializerMethodField()
     age = serializers.ReadOnlyField()
     
@@ -37,7 +161,7 @@ class StudentDetailSerializer(serializers.ModelSerializer):
         model = Student
         fields = [
             'id', 'first_name', 'last_name', 'middle_name', 'student_id',
-            'school', 'school_name', 'class_level', 'section',
+            'school', 'school_name', 'class_assigned', 'class_name',
             'date_of_birth', 'age', 'gender', 'email', 'phone',
             'address', 'city', 'state', 'blood_group', 'emergency_contact',
             'medical_conditions', 'enrollment_date', 'graduation_date',
@@ -66,7 +190,7 @@ class StudentCreateSerializer(serializers.ModelSerializer):
         model = Student
         fields = [
             'school', 'first_name', 'last_name', 'middle_name', 'student_id',
-            'class_level', 'section', 'date_of_birth', 'gender',
+            'class_assigned', 'date_of_birth', 'gender',
             'email', 'phone', 'address', 'city', 'state',
             'blood_group', 'emergency_contact', 'medical_conditions',
             'profile_picture'
@@ -76,7 +200,7 @@ class StudentCreateSerializer(serializers.ModelSerializer):
         """Ensure student ID is unique within school"""
         school = self.initial_data.get('school')
         if school and Student.objects.filter(school=school, student_id=value).exists():
-            raise serializers.ValidationError("A student with this ID already exists in this school.")
+            raise serializers.ValidationError("Un étudiant avec cet ID existe déjà dans cette école.")
         return value
     
     def create(self, validated_data):
@@ -91,7 +215,7 @@ class StudentUpdateSerializer(serializers.ModelSerializer):
         model = Student
         fields = [
             'first_name', 'last_name', 'middle_name', 'student_id',
-            'class_level', 'section', 'date_of_birth', 'gender',
+            'class_assigned', 'date_of_birth', 'gender',
             'email', 'phone', 'address', 'city', 'state',
             'blood_group', 'emergency_contact', 'medical_conditions',
             'enrollment_date', 'graduation_date', 'is_active',

@@ -4,6 +4,81 @@ from django.utils import timezone
 import uuid
 
 
+class Class(models.Model):
+    """
+    Class model for school classes/grade levels
+    Each school can create and manage their own classes
+    """
+    # Core identification
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    school = models.ForeignKey(
+        'schools.School',
+        on_delete=models.CASCADE,
+        related_name='classes'
+    )
+    
+    # Class information
+    name = models.CharField(max_length=100, help_text="Nom de la classe (ex: 'Grade 1', 'CP', '6ème')")
+    level = models.CharField(
+        max_length=50,
+        help_text="Niveau de classe pour le tri (ex: '1', '2', '3')"
+    )
+    section = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        help_text="Section dans la classe (ex: 'A', 'B', 'Science', 'Arts')"
+    )
+    description = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Description optionnelle de la classe"
+    )
+    
+    # Academic settings
+    academic_year = models.CharField(
+        max_length=20,
+        help_text="Année académique de cette classe (ex: '2024-2025')"
+    )
+    max_students = models.PositiveIntegerField(
+        default=30,
+        help_text="Nombre maximum d'étudiants autorisés dans cette classe"
+    )
+    
+    # Status and metadata
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Classe"
+        verbose_name_plural = "Classes"
+        unique_together = ['school', 'name', 'section', 'academic_year']
+        ordering = ['level', 'name', 'section']
+    
+    def __str__(self):
+        if self.section:
+            return f"{self.name} - {self.section} ({self.school.name})"
+        return f"{self.name} ({self.school.name})"
+    
+    @property
+    def full_name(self):
+        """Return full class name with section if available"""
+        if self.section:
+            return f"{self.name} - {self.section}"
+        return self.name
+    
+    @property
+    def student_count(self):
+        """Return number of students currently in this class"""
+        return self.students.filter(is_active=True).count()
+    
+    @property
+    def available_spots(self):
+        """Return number of available spots in this class"""
+        return max(0, self.max_students - self.student_count)
+
+
 class Student(models.Model):
     """
     Student model with school-specific data isolation
@@ -24,18 +99,17 @@ class Student(models.Model):
     # School-specific student ID
     student_id = models.CharField(
         max_length=50,
-        help_text="School-specific student identification number"
+        help_text="Numéro d'identification spécifique à l'école"
     )
     
     # Academic information
-    class_level = models.CharField(
-        max_length=50,
-        help_text="Current class/grade level (e.g., 'Class 6A', 'Grade 10')"
-    )
-    section = models.CharField(
-        max_length=20,
+    class_assigned = models.ForeignKey(
+        'Class',
+        on_delete=models.SET_NULL,
+        null=True,
         blank=True,
-        help_text="Class section (e.g., 'A', 'B', 'Science')"
+        related_name='students',
+        help_text="Classe assignée à cet étudiant"
     )
     
     # Personal details
@@ -43,9 +117,9 @@ class Student(models.Model):
     gender = models.CharField(
         max_length=10,
         choices=[
-            ('male', 'Male'),
-            ('female', 'Female'),
-            ('other', 'Other')
+            ('male', 'Masculin'),
+            ('female', 'Féminin'),
+            ('other', 'Autre')
         ]
     )
     
@@ -96,17 +170,17 @@ class Student(models.Model):
     
     class Meta:
         db_table = 'students_student'
-        verbose_name = 'Student'
-        verbose_name_plural = 'Students'
+        verbose_name = 'Étudiant'
+        verbose_name_plural = 'Étudiants'
         unique_together = ['school', 'student_id']
         ordering = ['last_name', 'first_name']
         indexes = [
             models.Index(fields=['school', 'is_active']),
-            models.Index(fields=['class_level']),
+            models.Index(fields=['class_assigned']),
             models.Index(fields=['enrollment_date']),
             models.Index(fields=['date_of_birth']),
             models.Index(fields=['gender']),
-            models.Index(fields=['school', 'class_level', 'is_active'])
+            models.Index(fields=['school', 'class_assigned', 'is_active'])
         ]
     
     def __str__(self):
@@ -167,14 +241,14 @@ class ParentStudent(models.Model):
     relationship = models.CharField(
         max_length=50,
         choices=[
-            ('father', 'Father'),
-            ('mother', 'Mother'),
-            ('guardian', 'Guardian'),
-            ('grandfather', 'Grandfather'),
-            ('grandmother', 'Grandmother'),
-            ('uncle', 'Uncle'),
-            ('aunt', 'Aunt'),
-            ('other', 'Other')
+            ('father', 'Père'),
+            ('mother', 'Mère'),
+            ('guardian', 'Tuteur'),
+            ('grandfather', 'Grand-père'),
+            ('grandmother', 'Grand-mère'),
+            ('uncle', 'Oncle'),
+            ('aunt', 'Tante'),
+            ('other', 'Autre')
         ]
     )
     
@@ -199,8 +273,8 @@ class ParentStudent(models.Model):
     
     class Meta:
         db_table = 'students_parent_student'
-        verbose_name = 'Parent-Student Relationship'
-        verbose_name_plural = 'Parent-Student Relationships'
+        verbose_name = 'Relation Parent-Étudiant'
+        verbose_name_plural = 'Relations Parent-Étudiant'
         unique_together = ['parent', 'student']
         indexes = [
             models.Index(fields=['parent', 'is_primary']),
@@ -278,8 +352,8 @@ class Transcript(models.Model):
     
     class Meta:
         db_table = 'students_transcript'
-        verbose_name = 'Transcript'
-        verbose_name_plural = 'Transcripts'
+        verbose_name = 'Relevé de Notes'
+        verbose_name_plural = 'Relevés de Notes'
         unique_together = ['student', 'academic_year', 'semester']
         ordering = ['-academic_year', '-semester']
         indexes = [
@@ -306,11 +380,11 @@ class BehaviorReport(models.Model):
     report_type = models.CharField(
         max_length=50,
         choices=[
-            ('positive', 'Positive Behavior'),
-            ('negative', 'Negative Behavior'),
-            ('neutral', 'General Observation'),
-            ('achievement', 'Achievement'),
-            ('discipline', 'Disciplinary Action')
+            ('positive', 'Comportement Positif'),
+            ('negative', 'Comportement Négatif'),
+            ('neutral', 'Observation Générale'),
+            ('achievement', 'Réussite'),
+            ('discipline', 'Mesure Disciplinaire')
         ]
     )
     
@@ -326,10 +400,10 @@ class BehaviorReport(models.Model):
     severity_level = models.CharField(
         max_length=20,
         choices=[
-            ('low', 'Low'),
-            ('medium', 'Medium'),
-            ('high', 'High'),
-            ('critical', 'Critical')
+            ('low', 'Faible'),
+            ('medium', 'Moyen'),
+            ('high', 'Élevé'),
+            ('critical', 'Critique')
         ],
         default='medium'
     )
@@ -356,8 +430,8 @@ class BehaviorReport(models.Model):
     
     class Meta:
         db_table = 'students_behavior_report'
-        verbose_name = 'Behavior Report'
-        verbose_name_plural = 'Behavior Reports'
+        verbose_name = 'Rapport de Comportement'
+        verbose_name_plural = 'Rapports de Comportement'
         ordering = ['-incident_date', '-created_at']
         indexes = [
             models.Index(fields=['student', 'report_type']),
@@ -390,15 +464,15 @@ class PaymentRecord(models.Model):
     payment_type = models.CharField(
         max_length=50,
         choices=[
-            ('tuition', 'Tuition Fee'),
-            ('library', 'Library Fee'),
-            ('laboratory', 'Laboratory Fee'),
-            ('sports', 'Sports Fee'),
-            ('transport', 'Transport Fee'),
-            ('meal', 'Meal Fee'),
-            ('uniform', 'Uniform Fee'),
-            ('examination', 'Examination Fee'),
-            ('other', 'Other')
+            ('tuition', 'Frais de Scolarité'),
+            ('library', 'Frais de Bibliothèque'),
+            ('laboratory', 'Frais de Laboratoire'),
+            ('sports', 'Frais de Sport'),
+            ('transport', 'Frais de Transport'),
+            ('meal', 'Frais de Repas'),
+            ('uniform', 'Frais d\'Uniforme'),
+            ('examination', 'Frais d\'Examen'),
+            ('other', 'Autre')
         ]
     )
     
@@ -406,11 +480,11 @@ class PaymentRecord(models.Model):
     status = models.CharField(
         max_length=20,
         choices=[
-            ('pending', 'Pending'),
-            ('paid', 'Paid'),
-            ('overdue', 'Overdue'),
-            ('cancelled', 'Cancelled'),
-            ('refunded', 'Refunded')
+            ('pending', 'En Attente'),
+            ('paid', 'Payé'),
+            ('overdue', 'En Retard'),
+            ('cancelled', 'Annulé'),
+            ('refunded', 'Remboursé')
         ],
         default='pending'
     )
@@ -424,12 +498,12 @@ class PaymentRecord(models.Model):
         max_length=50,
         blank=True,
         choices=[
-            ('cash', 'Cash'),
-            ('bank_transfer', 'Bank Transfer'),
-            ('card', 'Credit/Debit Card'),
+            ('cash', 'Espèces'),
+            ('bank_transfer', 'Virement Bancaire'),
+            ('card', 'Carte de Crédit/Débit'),
             ('mobile_money', 'Mobile Money'),
-            ('check', 'Check'),
-            ('other', 'Other')
+            ('check', 'Chèque'),
+            ('other', 'Autre')
         ]
     )
     
@@ -453,8 +527,8 @@ class PaymentRecord(models.Model):
     
     class Meta:
         db_table = 'students_payment_record'
-        verbose_name = 'Payment Record'
-        verbose_name_plural = 'Payment Records'
+        verbose_name = 'Enregistrement de Paiement'
+        verbose_name_plural = 'Enregistrements de Paiement'
         ordering = ['-due_date', '-created_at']
         indexes = [
             models.Index(fields=['student', 'status']),

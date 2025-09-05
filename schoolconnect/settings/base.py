@@ -234,6 +234,7 @@ SPECTACULAR_SETTINGS = {
     
     ### Core Management
     - Schools and school configuration
+    - Classes and class management
     - Students and academic records
     - Parents and family connections
     - Behavior reports and transcripts

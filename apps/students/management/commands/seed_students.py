@@ -52,16 +52,33 @@ class Command(BaseCommand):
             'Kone', 'Sangare', 'Diarra', 'Fofana', 'Kante'
         ]
         
-        class_levels = [
-            'Class 1', 'Class 2', 'Class 3', 'Class 4', 'Class 5',
-            'Class 6', 'Form 1', 'Form 2', 'Form 3', 'Form 4',
-            'Form 5', 'Form 6'
-        ]
+        # Create classes for each school instead of using class_levels
+        def create_classes_for_school(school):
+            from apps.students.models import Class
+            classes = []
+            class_names = [
+                'Class 1', 'Class 2', 'Class 3', 'Class 4', 'Class 5',
+                'Class 6', 'Form 1', 'Form 2', 'Form 3', 'Form 4',
+                'Form 5', 'Form 6'
+            ]
+            for i, name in enumerate(class_names, 1):
+                class_obj = Class.objects.create(
+                    school=school,
+                    name=name,
+                    level=str(i),
+                    academic_year='2024-2025',
+                    max_students=30
+                )
+                classes.append(class_obj)
+            return classes
         
         created_students = []
         
         for school in schools:
             self.stdout.write(f'Creating students for {school.name}...')
+            
+            # Create classes for this school
+            classes = create_classes_for_school(school)
             
             for i in range(count):
                 # Generate student data
@@ -82,7 +99,7 @@ class Command(BaseCommand):
                     first_name=first_name,
                     last_name=last_name,
                     student_id=student_id,
-                    class_level=random.choice(class_levels),
+                    class_assigned=random.choice(classes),
                     date_of_birth=birth_date,
                     gender=random.choice(['male', 'female']),
                     enrollment_date=enrollment_date,

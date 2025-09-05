@@ -509,11 +509,13 @@ class SchoolViewSet(viewsets.ModelViewSet):
     @extend_schema(
         summary="Get School Statistics",
         description="""
-        Retrieve comprehensive statistics for a specific school.
+        Retrieve comprehensive statistics for a specific school with detailed class information.
         
         **Statistics Include:**
         - Total student count
         - Class level distribution
+        - Detailed class information (all classes with student counts, capacity, etc.)
+        - Class statistics summary (total classes, capacity utilization, etc.)
         - Gender distribution
         - Recent enrollments (last 30 days)
         - Payment statistics (total, paid, overdue)
@@ -525,18 +527,54 @@ class SchoolViewSet(viewsets.ModelViewSet):
         """,
         examples=[
             OpenApiExample(
-                'School statistics',
-                summary='Get school statistics',
-                description='Retrieve comprehensive school analytics',
+                'School statistics with class details',
+                summary='Get comprehensive school statistics',
+                description='Retrieve detailed school analytics including class information',
                 value={
                     "total_students": 150,
                     "class_distribution": [
-                        {"class_level": "Grade 1", "count": 25},
-                        {"class_level": "Grade 2", "count": 30},
-                        {"class_level": "Grade 3", "count": 28},
-                        {"class_level": "Grade 4", "count": 32},
-                        {"class_level": "Grade 5", "count": 35}
+                        {"class_assigned__level": "1", "count": 25},
+                        {"class_assigned__level": "2", "count": 30},
+                        {"class_assigned__level": "3", "count": 28},
+                        {"class_assigned__level": "4", "count": 32},
+                        {"class_assigned__level": "5", "count": 35}
                     ],
+                    "class_details": [
+                        {
+                            "id": "123e4567-e89b-12d3-a456-426614174000",
+                            "name": "Grade 1",
+                            "level": "1",
+                            "section": "A",
+                            "full_name": "Grade 1 - A",
+                            "academic_year": "2024-2025",
+                            "max_students": 30,
+                            "student_count": 25,
+                            "available_spots": 5,
+                            "is_active": True,
+                            "created_at": "2024-01-15T10:30:00Z",
+                            "updated_at": "2024-09-04T14:20:00Z"
+                        },
+                        {
+                            "id": "123e4567-e89b-12d3-a456-426614174001",
+                            "name": "Grade 2",
+                            "level": "2",
+                            "section": "B",
+                            "full_name": "Grade 2 - B",
+                            "academic_year": "2024-2025",
+                            "max_students": 30,
+                            "student_count": 30,
+                            "available_spots": 0,
+                            "is_active": True,
+                            "created_at": "2024-01-15T10:30:00Z",
+                            "updated_at": "2024-09-04T14:20:00Z"
+                        }
+                    ],
+                    "class_statistics": {
+                        "total_classes": 12,
+                        "active_classes": 10,
+                        "total_capacity": 360,
+                        "utilization_rate": 41.67
+                    },
                     "gender_distribution": [
                         {"gender": "M", "count": 78},
                         {"gender": "F", "count": 72}
@@ -553,7 +591,7 @@ class SchoolViewSet(viewsets.ModelViewSet):
     )
     @action(detail=True, methods=['get'])
     def statistics(self, request, pk=None):
-        """Get school statistics"""
+        """Get school statistics with detailed class information"""
         school = self.get_object()
         
         # Get student statistics
@@ -561,9 +599,31 @@ class SchoolViewSet(viewsets.ModelViewSet):
         total_students = students.count()
         
         # Get class level distribution
-        class_distribution = students.values('class_level').annotate(
+        class_distribution = students.values('class_assigned__level').annotate(
             count=Count('id')
-        ).order_by('class_level')
+        ).order_by('class_assigned__level')
+        
+        # Get detailed class information
+        classes = school.classes.filter(is_active=True).order_by('level', 'name', 'section')
+        
+        # Get class details with statistics
+        class_details = []
+        for class_obj in classes:
+            student_count = class_obj.student_count  # Use the property
+            class_details.append({
+                'id': str(class_obj.id),
+                'name': class_obj.name,
+                'level': class_obj.level,
+                'section': class_obj.section,
+                'full_name': class_obj.full_name,
+                'academic_year': class_obj.academic_year,
+                'max_students': class_obj.max_students,
+                'student_count': student_count,
+                'available_spots': class_obj.max_students - student_count,
+                'is_active': class_obj.is_active,
+                'created_at': class_obj.created_at,
+                'updated_at': class_obj.updated_at
+            })
         
         # Get gender distribution
         gender_distribution = students.values('gender').annotate(
@@ -582,9 +642,22 @@ class SchoolViewSet(viewsets.ModelViewSet):
             overdue_payments=Count('payment_records', filter=Q(payment_records__status='overdue'))
         )
         
+        # Get class statistics summary
+        total_classes = classes.count()
+        active_classes = classes.filter(is_active=True).count()
+        total_capacity = sum(class_obj.max_students for class_obj in classes)
+        utilization_rate = (total_students / total_capacity * 100) if total_capacity > 0 else 0
+        
         return Response({
             'total_students': total_students,
             'class_distribution': class_distribution,
+            'class_details': class_details,
+            'class_statistics': {
+                'total_classes': total_classes,
+                'active_classes': active_classes,
+                'total_capacity': total_capacity,
+                'utilization_rate': round(utilization_rate, 2)
+            },
             'gender_distribution': gender_distribution,
             'recent_enrollments': recent_enrollments,
             'payment_statistics': payment_stats

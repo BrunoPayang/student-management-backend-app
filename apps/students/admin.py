@@ -2,17 +2,55 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django.urls import reverse
 from django.utils.safestring import mark_safe
-from .models import Student, ParentStudent, Transcript, BehaviorReport, PaymentRecord
+from .models import Class, Student, ParentStudent, Transcript, BehaviorReport, PaymentRecord
+
+
+@admin.register(Class)
+class ClassAdmin(admin.ModelAdmin):
+    list_display = [
+        'full_name', 'school', 'academic_year', 'level', 
+        'student_count', 'max_students', 'is_active'
+    ]
+    list_filter = [
+        'school', 'academic_year', 'level', 'is_active'
+    ]
+    search_fields = [
+        'name', 'section', 'description', 'school__name'
+    ]
+    readonly_fields = ['id', 'student_count', 'available_spots', 'created_at', 'updated_at']
+    
+    fieldsets = (
+        ('Informations de Base', {
+            'fields': ('school', 'name', 'level', 'section', 'description')
+        }),
+        ('Paramètres Académiques', {
+            'fields': ('academic_year', 'max_students')
+        }),
+        ('Statut', {
+            'fields': ('is_active',)
+        }),
+        ('Statistiques', {
+            'fields': ('student_count', 'available_spots'),
+            'classes': ('collapse',)
+        }),
+        ('Horodatage', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        })
+    )
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('school')
 
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
     list_display = [
-        'full_name', 'student_id', 'school', 'class_level', 
+        'full_name', 'student_id', 'school', 'class_assigned', 
         'gender', 'is_active', 'enrollment_date'
     ]
     list_filter = [
-        'school', 'is_active', 'gender', 'class_level', 
+        'school', 'is_active', 'gender', 'class_assigned', 
         'enrollment_date', 'is_graduated'
     ]
     search_fields = [
@@ -22,29 +60,29 @@ class StudentAdmin(admin.ModelAdmin):
     readonly_fields = ['id', 'created_at', 'updated_at']
     
     fieldsets = (
-        ('Basic Information', {
+        ('Informations de Base', {
             'fields': ('school', 'first_name', 'last_name', 'middle_name', 'student_id')
         }),
-        ('Academic Information', {
-            'fields': ('class_level', 'section', 'enrollment_date', 'graduation_date')
+        ('Informations Académiques', {
+            'fields': ('class_assigned', 'enrollment_date', 'graduation_date')
         }),
-        ('Personal Information', {
+        ('Informations Personnelles', {
             'fields': ('date_of_birth', 'gender', 'blood_group')
         }),
-        ('Contact Information', {
+        ('Informations de Contact', {
             'fields': ('email', 'phone', 'emergency_contact')
         }),
-        ('Address', {
+        ('Adresse', {
             'fields': ('address', 'city', 'state')
         }),
-        ('Medical Information', {
+        ('Informations Médicales', {
             'fields': ('medical_conditions',),
             'classes': ('collapse',)
         }),
-        ('Status', {
+        ('Statut', {
             'fields': ('is_active', 'is_graduated', 'profile_picture')
         }),
-        ('Timestamps', {
+        ('Horodatage', {
             'fields': ('created_at', 'updated_at'),
             'classes': ('collapse',)
         })
@@ -52,7 +90,7 @@ class StudentAdmin(admin.ModelAdmin):
     
     def full_name(self, obj):
         return obj.full_name
-    full_name.short_description = 'Full Name'
+    full_name.short_description = 'Nom Complet'
     
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('school')
@@ -80,7 +118,7 @@ class ParentStudentAdmin(admin.ModelAdmin):
     
     def student_name(self, obj):
         return obj.student.full_name
-    student_name.short_description = 'Student'
+    student_name.short_description = 'Étudiant'
 
 
 @admin.register(Transcript)
@@ -101,7 +139,7 @@ class TranscriptAdmin(admin.ModelAdmin):
     
     def student_name(self, obj):
         return obj.student.full_name
-    student_name.short_description = 'Student'
+    student_name.short_description = 'Étudiant'
 
 
 @admin.register(BehaviorReport)
@@ -122,7 +160,7 @@ class BehaviorReportAdmin(admin.ModelAdmin):
     
     def student_name(self, obj):
         return obj.student.full_name
-    student_name.short_description = 'Student'
+    student_name.short_description = 'Étudiant'
 
 
 @admin.register(PaymentRecord)
@@ -143,4 +181,4 @@ class PaymentRecordAdmin(admin.ModelAdmin):
     
     def student_name(self, obj):
         return obj.student.full_name
-    student_name.short_description = 'Student'
+    student_name.short_description = 'Étudiant'
