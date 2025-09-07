@@ -4,6 +4,7 @@ from rest_framework.documentation import include_docs_urls
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
+from .views import HealthCheckView
 
 @api_view(['GET'])
 def api_root(request, format=None):
@@ -39,4 +40,5 @@ def api_root(request, format=None):
 
 urlpatterns = [
     path('', api_root, name='api-root'),
+    path('health/', HealthCheckView, name='health-check'),
 ] 
