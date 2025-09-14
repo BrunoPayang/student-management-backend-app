@@ -7,7 +7,7 @@ from .base import *
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-# Allow ngrok domains for development
+# Allow ngrok domains for development and Render domains
 ALLOWED_HOSTS = [
     'localhost', 
     '127.0.0.1', 
@@ -15,7 +15,9 @@ ALLOWED_HOSTS = [
     'b461159c6436.ngrok-free.app',
     '.ngrok-free.app',  # Allow all ngrok-free.app subdomains
     '.ngrok.io',        # Allow all ngrok.io subdomains
-    '10.0.2.2'
+    '10.0.2.2',
+    'schoolconnect-qeaf.onrender.com',  # Render domain
+    '.onrender.com'     # Allow all onrender.com subdomains
 ]
 
 # Database configuration for development
