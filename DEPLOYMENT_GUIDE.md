@@ -116,6 +116,16 @@ Both platforms use the health check endpoint:
 2. **Database connection**: Verify `DATABASE_URL` is set
 3. **Static files**: Ensure `collectstatic` runs successfully
 4. **Health check fails**: Check application starts without errors
+5. **Migration errors**: Fixed CharField default value issues in schools migration
+
+### Migration Fix Applied:
+- **Issue**: `psycopg2.errors.StringDataRightTruncation: value too long for type character varying(20)`
+- **Cause**: Migration was using `django.utils.timezone.now` as default for CharField fields
+- **Fix**: Updated migration to use proper string defaults:
+  - `city`: 'Niamey'
+  - `state`: 'Niamey' 
+  - `contact_email`: 'admin@schoolconnect.ne'
+  - `contact_phone`: '+22712345678'
 
 ### Debug Commands:
 ```bash

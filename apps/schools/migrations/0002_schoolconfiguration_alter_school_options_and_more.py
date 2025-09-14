@@ -58,19 +58,19 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='school',
             name='city',
-            field=models.CharField(default=django.utils.timezone.now, max_length=100),
+            field=models.CharField(default='Niamey', max_length=100),
             preserve_default=False,
         ),
         migrations.AddField(
             model_name='school',
             name='contact_email',
-            field=models.EmailField(default=django.utils.timezone.now, help_text='Primary contact email', max_length=254),
+            field=models.EmailField(default='admin@schoolconnect.ne', help_text='Primary contact email', max_length=254),
             preserve_default=False,
         ),
         migrations.AddField(
             model_name='school',
             name='contact_phone',
-            field=models.CharField(default=django.utils.timezone.now, help_text='Primary contact phone number', max_length=20, validators=[django.core.validators.RegexValidator(message="Phone number must be entered in the format: '+999999999'", regex='^\\+?1?\\d{8,15}$')]),
+            field=models.CharField(default='+22712345678', help_text='Primary contact phone number', max_length=20, validators=[django.core.validators.RegexValidator(message="Phone number must be entered in the format: '+999999999'", regex='^\\+?1?\\d{8,15}$')]),
             preserve_default=False,
         ),
         migrations.AddField(
@@ -91,7 +91,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='school',
             name='state',
-            field=models.CharField(default=django.utils.timezone.now, max_length=100),
+            field=models.CharField(default='Niamey', max_length=100),
             preserve_default=False,
         ),
         migrations.AlterField(
