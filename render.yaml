@@ -4,7 +4,7 @@ services:
     env: python
     plan: free
     buildCommand: "./build.sh"
-    startCommand: "python -m gunicorn schoolconnect.asgi:application -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT"
+    startCommand: "python manage.py createsuperuser --noinput && python -m gunicorn schoolconnect.asgi:application -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT"
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.0
