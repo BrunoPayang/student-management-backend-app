@@ -1,6 +1,6 @@
 # SchoolConnect Backend
 
-A Django REST API backend for school management system with multi-tenant architecture, JWT authentication, and Firebase integration.
+A Django REST API backend for school management system with multi-tenant architecture, JWT authentication, and Firebase integration
 
 ## Features
 
