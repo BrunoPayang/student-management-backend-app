@@ -27,14 +27,18 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # CORS settings for production
 CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='').split(',')
 
-# Sentry for error tracking
-import sentry_sdk
-from sentry_sdk.integrations.django import DjangoIntegration
-
-if config('SENTRY_DSN', default=''):
-    sentry_sdk.init(
-        dsn=config('SENTRY_DSN'),
-        integrations=[DjangoIntegration()],
-        traces_sample_rate=1.0,
-        send_default_pii=True
-    ) 
+# Sentry for error tracking (optional)
+try:
+    import sentry_sdk
+    from sentry_sdk.integrations.django import DjangoIntegration
+    
+    if config('SENTRY_DSN', default=''):
+        sentry_sdk.init(
+            dsn=config('SENTRY_DSN'),
+            integrations=[DjangoIntegration()],
+            traces_sample_rate=1.0,
+            send_default_pii=True
+        )
+except ImportError:
+    # Sentry is not installed, skip initialization
+    pass 
