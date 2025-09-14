@@ -25,7 +25,7 @@ DATABASES['default'] = dj_database_url.parse(config('DATABASE_URL'))
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # CORS settings for production
-CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='').split(',')
+CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='https://dashboard-app-287c.onrender.com').split(',')
 
 # Sentry for error tracking (optional)
 try:
