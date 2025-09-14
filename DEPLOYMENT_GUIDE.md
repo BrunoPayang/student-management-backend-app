@@ -118,14 +118,17 @@ Both platforms use the health check endpoint:
 4. **Health check fails**: Check application starts without errors
 5. **Migration errors**: Fixed CharField default value issues in schools migration
 
-### Migration Fix Applied:
-- **Issue**: `psycopg2.errors.StringDataRightTruncation: value too long for type character varying(20)`
-- **Cause**: Migration was using `django.utils.timezone.now` as default for CharField fields
-- **Fix**: Updated migration to use proper string defaults:
-  - `city`: 'Niamey'
-  - `state`: 'Niamey' 
-  - `contact_email`: 'admin@schoolconnect.ne'
-  - `contact_phone`: '+22712345678'
+### Migration Fixes Applied:
+1. **CharField Default Values**: Fixed migration using `django.utils.timezone.now` as default for CharField fields
+   - `city`: 'Niamey'
+   - `state`: 'Niamey' 
+   - `contact_email`: 'admin@schoolconnect.ne'
+   - `contact_phone`: '+22712345678'
+
+2. **UUID Field Conversion**: Resolved `cannot cast type bigint to uuid` error
+   - Changed School model to use `BigAutoField` instead of `UUIDField`
+   - This provides better compatibility with existing data and migrations
+   - Maintains all functionality while avoiding PostgreSQL casting issues
 
 ### Debug Commands:
 ```bash

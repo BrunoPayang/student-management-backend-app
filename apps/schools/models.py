@@ -10,7 +10,7 @@ class School(models.Model):
     Each school is a separate tenant with isolated data
     """
     # Core identification
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=200, help_text="Full school name")
     slug = models.SlugField(
         unique=True, 
