@@ -1,235 +1,151 @@
-# Guide de Déploiement Railway avec GitLab
+# Railway Deployment Guide for SchoolConnect
 
-Ce guide vous accompagnera étape par étape pour déployer votre application de gestion d'étudiants sur Railway avec GitLab.
+## Prerequisites
+- Railway account
+- Git repository with your code
+- PostgreSQL database (Railway provides this)
 
-## 📋 Prérequis
+## Deployment Steps
 
-- Compte GitLab
-- Compte Railway (gratuit)
-- Code source de votre application prêt
+### 1. Create Railway Project
+1. Go to [Railway.app](https://railway.app)
+2. Sign in with GitHub
+3. Click "New Project"
+4. Select "Deploy from GitHub repo"
+5. Choose your SchoolConnect repository
 
-## 🚀 Étapes de Déploiement
+### 2. Add PostgreSQL Database
+1. In your Railway project dashboard
+2. Click "New" → "Database" → "PostgreSQL"
+3. Railway will automatically create a database
 
-### 1. Préparation du Repository GitLab
-
-#### 1.1 Créer un nouveau repository GitLab
-1. Allez sur [GitLab](https://gitlab.com) et connectez-vous
-2. Cliquez sur "New project" → "Create blank project"
-3. Nommez votre repository (ex: `student-management-backend`)
-4. Choisissez "Public" ou "Private" selon vos besoins
-5. **Ne cochez PAS** "Initialize repository with a README" (votre projet en a déjà un)
-6. Cliquez sur "Create project"
-
-#### 1.2 Pousser votre code vers GitLab
-```bash
-# Dans votre terminal, naviguez vers votre projet
-cd C:\Users\bgano\Desktop\project\student-management-backend-app
-
-# Initialisez git si ce n'est pas déjà fait
-git init
-
-# Ajoutez tous les fichiers
-git add .
-
-# Créez le commit initial
-git commit -m "Initial commit: Student Management Backend"
-
-# Ajoutez votre repository GitLab comme origine
-git remote add origin https://gitlab.com/VOTRE_USERNAME/VOTRE_REPO_NAME.git
-
-# Poussez vers GitLab
-git push -u origin main
-```
-
-### 2. Configuration Railway
-
-#### 2.1 Créer un compte Railway
-1. Allez sur [Railway](https://railway.app)
-2. Cliquez sur "Login" et connectez-vous avec GitLab
-3. Autorisez Railway à accéder à vos repositories GitLab
-
-#### 2.2 Créer un nouveau projet
-1. Dans le dashboard Railway, cliquez sur "New Project"
-2. Sélectionnez "Deploy from GitLab repo"
-3. Choisissez votre repository `student-management-backend`
-4. Railway va automatiquement détecter votre `railway.json` et `Dockerfile`
-
-### 3. Configuration des Variables d'Environnement
-
-#### 3.1 Variables essentielles à configurer
-Dans votre projet Railway, allez dans l'onglet "Variables" et ajoutez :
+### 3. Configure Environment Variables
+In your Railway project settings, add these environment variables:
 
 ```bash
-# Django Configuration
+# Database (Railway will auto-populate DATABASE_URL)
+DATABASE_URL=postgresql://username:password@host:port/database
+
+# Django Settings
+SECRET_KEY=your-secret-key-here
 DEBUG=False
-SECRET_KEY=votre-clé-secrète-très-longue-et-complexe
-DJANGO_SETTINGS_MODULE=schoolconnect.settings.production
+ALLOWED_HOSTS=your-railway-domain.railway.app
 
-# Database (Railway fournira automatiquement DATABASE_URL)
-# Pas besoin de la configurer manuellement
-
-# CORS Configuration
-CORS_ALLOWED_ORIGINS=https://votre-frontend-domain.com,https://votre-app-mobile.com
-
-# Firebase Configuration (optionnel)
+# Optional: Firebase (if using)
 FIREBASE_ENABLED=False
+FIREBASE_CREDENTIALS_PATH=
+FIREBASE_STORAGE_BUCKET=
+FIREBASE_PROJECT_ID=
 
-# Email Configuration (pour les notifications)
+# Optional: Email (if using)
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
-EMAIL_USE_TLS=True
-EMAIL_HOST_USER=votre-email@gmail.com
-EMAIL_HOST_PASSWORD=votre-mot-de-passe-app
-DEFAULT_FROM_EMAIL=votre-email@gmail.com
+EMAIL_HOST_USER=your-email@gmail.com
+EMAIL_HOST_PASSWORD=your-app-password
 
-# File Upload Settings
-ALLOWED_FILE_TYPES=.pdf,.doc,.docx,.jpg,.jpeg,.png,.gif
-MAX_FILE_SIZE_MB=10
-
-# Notification Settings
-ENABLE_FCM_NOTIFICATIONS=True
-ENABLE_EMAIL_NOTIFICATIONS=True
+# Optional: Redis (for Celery)
+CELERY_BROKER_URL=redis://localhost:6379/0
+CELERY_RESULT_BACKEND=redis://localhost:6379/0
 ```
 
-#### 3.2 Générer une clé secrète Django
-```python
-# Exécutez cette commande dans votre terminal Python
-from django.core.management.utils import get_random_secret_key
-print(get_random_secret_key())
+### 4. Deploy
+Railway will automatically:
+1. Run `./build.sh` to install dependencies and migrate
+2. Start the application with Gunicorn + Uvicorn
+3. Serve static files with WhiteNoise
+
+## Files Created for Railway
+
+### `railway.json`
+```json
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS"
+  },
+  "deploy": {
+    "startCommand": "python -m gunicorn schoolconnect.asgi:application -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT",
+    "healthcheckPath": "/api/health/",
+    "healthcheckTimeout": 100,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
+  }
+}
 ```
 
-### 4. Configuration de la Base de Données
+### `Procfile`
+```
+web: python -m gunicorn schoolconnect.asgi:application -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT
+```
 
-#### 4.1 Ajouter PostgreSQL
-1. Dans votre projet Railway, cliquez sur "New Service"
-2. Sélectionnez "Database" → "PostgreSQL"
-3. Railway créera automatiquement une base de données
-4. La variable `DATABASE_URL` sera automatiquement ajoutée
-
-#### 4.2 Migrations automatiques
-Railway exécutera automatiquement les migrations lors du déploiement grâce à votre `Dockerfile`.
-
-### 5. Déploiement
-
-#### 5.1 Déploiement automatique
-1. Railway détectera automatiquement votre `railway.json`
-2. Le déploiement commencera automatiquement
-3. Surveillez les logs dans l'onglet "Deployments"
-
-#### 5.2 Vérification du déploiement
-Une fois déployé, vous obtiendrez une URL comme : `https://votre-projet-production.up.railway.app`
-
-Testez votre API :
+### `build.sh`
 ```bash
-# Test de santé
-curl https://votre-projet-production.up.railway.app/api/health/
+#!/usr/bin/env bash
+set -o errexit
 
-# Test des endpoints principaux
-curl https://votre-projet-production.up.railway.app/api/schools/
+echo "Installing dependencies..."
+pip install -r requirements.txt
+
+echo "Collecting static files..."
+python manage.py collectstatic --no-input
+
+echo "Running database migrations..."
+python manage.py migrate
+
+echo "Build completed successfully!"
 ```
 
-### 6. Configuration du Domaine Personnalisé (Optionnel)
+## Health Check
+Your application includes a health check endpoint at `/api/health/` that Railway will use to verify the deployment.
 
-#### 6.1 Ajouter un domaine personnalisé
-1. Dans votre projet Railway, allez dans "Settings"
-2. Section "Domains"
-3. Ajoutez votre domaine personnalisé
-4. Configurez les enregistrements DNS selon les instructions Railway
+## Static Files
+- WhiteNoise handles static file serving in production
+- Files are compressed and cached for better performance
+- No need for external CDN or static file hosting
 
-### 7. Surveillance et Maintenance
+## Database
+- Railway provides PostgreSQL database
+- Migrations run automatically during deployment
+- Database URL is automatically provided via `DATABASE_URL` environment variable
 
-#### 7.1 Logs et Monitoring
-- Consultez les logs dans l'onglet "Deployments"
-- Surveillez les métriques dans l'onglet "Metrics"
+## Monitoring
+- Railway provides built-in monitoring
+- Check logs in the Railway dashboard
+- Health check endpoint: `https://your-app.railway.app/api/health/`
 
-#### 7.2 Mises à jour
-Pour mettre à jour votre application :
+## Troubleshooting
+
+### Common Issues
+1. **Build fails**: Check that all dependencies are in `requirements.txt`
+2. **Database connection**: Verify `DATABASE_URL` is set correctly
+3. **Static files**: Ensure `collectstatic` runs successfully
+4. **Health check fails**: Check that the app starts without errors
+
+### Debug Commands
 ```bash
-# Faites vos modifications localement
-git add .
-git commit -m "Update: Description des modifications"
-git push origin main
-
-# Railway déploiera automatiquement les changements
-```
-
-## 🔧 Dépannage
-
-### Problèmes Courants
-
-#### 1. Erreur de Build
-- Vérifiez que tous les fichiers requis sont dans votre repository
-- Assurez-vous que `requirements/production.txt` est correct
-
-#### 2. Erreur de Base de Données
-- Vérifiez que PostgreSQL est bien configuré
-- Assurez-vous que `DATABASE_URL` est définie
-
-#### 3. Erreur CORS
-- Vérifiez `CORS_ALLOWED_ORIGINS` dans les variables d'environnement
-- Ajoutez votre domaine frontend à la liste
-
-#### 4. Erreur de Fichiers Statiques
-- Les fichiers statiques sont automatiquement collectés par le `Dockerfile`
-- Vérifiez que `STATICFILES_STORAGE` est configuré dans `production.py`
-
-### Commandes Utiles
-
-```bash
-# Vérifier les logs Railway
+# Check logs
 railway logs
 
-# Accéder à la base de données
+# Connect to database
 railway connect
 
-# Redéployer manuellement
-railway redeploy
+# Run migrations manually
+railway run python manage.py migrate
 ```
 
-## 📱 Configuration Frontend
+## Production Checklist
+- [ ] Set `DEBUG=False`
+- [ ] Set strong `SECRET_KEY`
+- [ ] Configure `ALLOWED_HOSTS`
+- [ ] Set up proper database
+- [ ] Configure email settings (if needed)
+- [ ] Test all API endpoints
+- [ ] Verify static files are served correctly
+- [ ] Check health check endpoint
 
-Une fois déployé, mettez à jour votre application frontend avec la nouvelle URL :
-
-```javascript
-// Dans votre configuration frontend
-const API_BASE_URL = 'https://votre-projet-production.up.railway.app/api/';
-```
-
-## 🔐 Sécurité
-
-### Recommandations
-1. **Jamais** commitez de clés secrètes dans votre code
-2. Utilisez toujours HTTPS en production
-3. Configurez des domaines autorisés dans `ALLOWED_HOSTS`
-4. Activez les notifications d'erreur avec Sentry (optionnel)
-
-### Variables Sensibles
-- `SECRET_KEY` : Générée automatiquement
-- `DATABASE_URL` : Fournie par Railway
-- `EMAIL_HOST_PASSWORD` : Mot de passe d'application Gmail
-
-## 📊 Monitoring
-
-Railway fournit :
-- Logs en temps réel
-- Métriques de performance
-- Surveillance de la santé de l'application
-- Alertes automatiques
-
-## 🎉 Félicitations !
-
-Votre application est maintenant déployée sur Railway ! 
-
-**URL de votre API** : `https://votre-projet-production.up.railway.app/api/`
-
-**Documentation API** : `https://votre-projet-production.up.railway.app/api/schema/swagger-ui/`
-
----
-
-## 📞 Support
-
-Si vous rencontrez des problèmes :
-1. Consultez les logs Railway
-2. Vérifiez la configuration des variables d'environnement
-3. Testez localement avec les mêmes paramètres
-4. Consultez la documentation Railway : https://docs.railway.app
+## API Endpoints
+Once deployed, your API will be available at:
+- **API Root**: `https://your-app.railway.app/api/`
+- **Documentation**: `https://your-app.railway.app/api/docs/`
+- **Health Check**: `https://your-app.railway.app/api/health/`
+- **Schema**: `https://your-app.railway.app/api/schema/`
