@@ -17,6 +17,7 @@ ALLOWED_HOSTS = [
     '.ngrok.io',        # Allow all ngrok.io subdomains
     '10.0.2.2',
     'schoolconnect-qeaf.onrender.com',  # Render domain
+    'dashboard-app-287c.onrender.com',  # Dashboard app domain
     '.onrender.com'     # Allow all onrender.com subdomains
 ]
 

@@ -19,7 +19,7 @@ services:
       - key: DEBUG
         value: "False"
       - key: ALLOWED_HOSTS
-        value: "schoolconnect-qeaf.onrender.com,*.onrender.com"
+        value: "schoolconnect-qeaf.onrender.com,dashboard-app-287c.onrender.com,*.onrender.com"
       - key: WEB_CONCURRENCY
         value: 4
       - key: FIREBASE_ENABLED

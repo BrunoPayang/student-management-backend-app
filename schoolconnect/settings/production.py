@@ -7,7 +7,7 @@ import dj_database_url
 
 DEBUG = False
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='schoolconnect-qeaf.onrender.com,*.onrender.com').split(',')
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='schoolconnect-qeaf.onrender.com,dashboard-app-287c.onrender.com,*.onrender.com').split(',')
 
 # Security settings
 SECURE_BROWSER_XSS_FILTER = True
