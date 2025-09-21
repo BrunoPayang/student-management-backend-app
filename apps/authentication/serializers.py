@@ -131,4 +131,27 @@ class FCMTokenSerializer(serializers.Serializer):
         user = self.context['request'].user
         user.fcm_token = self.validated_data['fcm_token']
         user.save()
-        return user 
+        return user
+
+
+class ParentListSerializer(serializers.ModelSerializer):
+    """Serializer for listing parents - simplified version for staff use"""
+    full_name = serializers.ReadOnlyField()
+    school_name = serializers.CharField(source='school.name', read_only=True)
+    student_count = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = User
+        fields = [
+            'id', 'username', 'email', 'first_name', 'last_name', 
+            'full_name', 'user_type', 'school', 'school_name', 
+            'phone', 'profile_picture', 'is_verified', 'is_active',
+            'student_count', 'created_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'is_verified']
+    
+    def get_student_count(self, obj):
+        """Get the number of students this parent is associated with"""
+        if hasattr(obj, 'student_relationships'):
+            return obj.student_relationships.count()
+        return 0 

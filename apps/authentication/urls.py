@@ -25,4 +25,7 @@ urlpatterns = [
     
     # FCM token management
     path('fcm-token/', views.UpdateFCMTokenView.as_view(), name='update_fcm_token'),
+    
+    # Parent management (for school staff)
+    path('parents/', views.ParentListView.as_view(), name='parent_list'),
 ] 

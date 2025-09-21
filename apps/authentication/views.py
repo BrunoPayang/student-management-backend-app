@@ -11,14 +11,18 @@ from django.utils.encoding import force_bytes, force_str
 from django.core.mail import send_mail
 from django.conf import settings
 from django.shortcuts import get_object_or_404
+from django.db.models import Q
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiExample
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
 
 from .models import User
 from .serializers import (
     UserSerializer, UserRegistrationSerializer, LoginSerializer,
-    PasswordChangeSerializer, FCMTokenSerializer
+    PasswordChangeSerializer, FCMTokenSerializer, ParentListSerializer
 )
-from .permissions import IsOwnerOrAdmin
+from .permissions import IsOwnerOrAdmin, CanManageUsers
+from apps.common.pagination import StandardResultsSetPagination
 
 
 @extend_schema_view(
@@ -432,3 +436,119 @@ def user_context(request):
         context['school'] = school_context
     
     return Response(context)
+
+
+@extend_schema_view(
+    get=extend_schema(
+        summary="Liste des Parents",
+        description="Récupère la liste des parents de l'école pour le personnel scolaire",
+        tags=["authentication"],
+        parameters=[
+            OpenApiParameter(
+                name='search',
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description='Rechercher par nom, email ou téléphone'
+            ),
+            OpenApiParameter(
+                name='is_active',
+                type=bool,
+                location=OpenApiParameter.QUERY,
+                description='Filtrer par statut actif'
+            ),
+            OpenApiParameter(
+                name='is_verified',
+                type=bool,
+                location=OpenApiParameter.QUERY,
+                description='Filtrer par statut de vérification'
+            ),
+            OpenApiParameter(
+                name='ordering',
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description='Trier par: first_name, last_name, created_at, student_count'
+            )
+        ],
+        examples=[
+            OpenApiExample(
+                'Liste des parents',
+                summary='Exemple de réponse',
+                description='Liste paginée des parents de l\'école',
+                value={
+                    "count": 45,
+                    "next": "http://localhost:8000/api/parents/?page=2",
+                    "previous": None,
+                    "results": [
+                        {
+                            "id": 1,
+                            "username": "parent123",
+                            "email": "parent@example.com",
+                            "first_name": "Jean",
+                            "last_name": "Dupont",
+                            "full_name": "Jean Dupont",
+                            "user_type": "parent",
+                            "school": "uuid",
+                            "school_name": "École Primaire de Niamey",
+                            "phone": "+22712345678",
+                            "profile_picture": None,
+                            "is_verified": True,
+                            "is_active": True,
+                            "student_count": 2,
+                            "created_at": "2024-01-15T10:30:00Z"
+                        }
+                    ]
+                }
+            )
+        ]
+    )
+)
+class ParentListView(generics.ListAPIView):
+    """
+    Vue pour lister tous les parents de l'école
+    Accessible uniquement au personnel scolaire et aux administrateurs
+    """
+    serializer_class = ParentListSerializer
+    permission_classes = [CanManageUsers]
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['is_active', 'is_verified']
+    search_fields = ['first_name', 'last_name', 'email', 'phone']
+    ordering_fields = ['first_name', 'last_name', 'created_at', 'student_count']
+    ordering = ['last_name', 'first_name']
+    
+    def get_queryset(self):
+        """Filtrer les parents selon les permissions de l'utilisateur"""
+        user = self.request.user
+        
+        if user.is_system_admin():
+            # Les administrateurs système peuvent voir tous les parents
+            return User.objects.filter(user_type='parent')
+        elif user.is_school_staff() and user.school:
+            # Le personnel scolaire ne peut voir que les parents de leur école
+            # Inclure les parents directement associés à l'école
+            direct_parents = User.objects.filter(
+                user_type='parent',
+                school=user.school
+            )
+            
+            # Inclure les parents qui ont des enfants dans cette école mais n'ont pas d'école définie
+            try:
+                from apps.students.models import ParentStudent
+                parent_students = ParentStudent.objects.filter(
+                    student__school=user.school
+                ).values_list('parent_id', flat=True).distinct()
+                
+                additional_parents = User.objects.filter(
+                    id__in=parent_students,
+                    user_type='parent',
+                    school__isnull=True
+                )
+                
+                # Combiner les deux querysets
+                return direct_parents | additional_parents
+            except ImportError:
+                # Si le modèle ParentStudent n'est pas disponible, retourner seulement les parents directs
+                return direct_parents
+        else:
+            # Pour les autres cas, retourner un queryset vide
+            return User.objects.none()
